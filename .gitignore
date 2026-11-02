@@ -1,0 +1,8 @@
+build/raw.json
+build/sections.json
+build/events.json
+build/cats.json
+build/bars.json
+build/index.html
+*.txt
+__pycache__/
