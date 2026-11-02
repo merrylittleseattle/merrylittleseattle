@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Merry Little Seattle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a Seattle winter night. Deep ink sky, string-light amber for anything you can act on, snow for text. One column of tools, cards underneath. */
+:root{
+  --night:#0e1828;
+  --dusk:#18263d;
+  --ridge:#25385a;
+  --snow:#eef3f9;
+  --frost:#a9bad0;
+  --glow:#f3b562;
+  --berry:#e98a7f;
+  --display:"Gloock", Georgia, "Times New Roman", serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--night);color:var(--snow);font-family:var(--body);font-size:16px;line-height:1.5}
+a{color:var(--glow)}
+:focus-visible{outline:2px solid var(--glow);outline-offset:2px;border-radius:6px}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+
+/* Hero */
+header{position:relative;overflow:hidden;background:linear-gradient(180deg,#0a1220 0%,var(--night) 100%);border-bottom:1px solid var(--ridge)}
+#snow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.hero{position:relative;padding:44px 20px 30px}
+.hero h1{font-family:var(--display);font-weight:400;font-size:clamp(48px,9vw,92px);line-height:.95;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.hero h1 span{color:var(--glow)}
+.hero p.lede{max-width:56ch;color:var(--frost);font-size:18px;margin:14px 0 0}
+.tonight{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;background:rgba(24,38,61,.85);border:1px solid var(--ridge);font-size:14px;font-variant-numeric:tabular-nums}
+.pill b{color:var(--glow);font-weight:600}
+
+/* Tabs */
+nav.tabs{position:sticky;top:0;z-index:5;background:rgba(14,24,40,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--ridge)}
+nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav.tabs a{flex:none;padding:14px 14px 12px;color:var(--frost);text-decoration:none;font-weight:600;font-size:15px;border-bottom:3px solid transparent}
+nav.tabs a[aria-current="page"]{color:var(--snow);border-bottom-color:var(--glow)}
+nav.tabs a:hover{color:var(--snow)}
+
+main{padding:0 0 120px}
+main.wrap{padding-top:40px}
+.view{display:none}
+.view.on{display:block}
+.intro{color:var(--frost);max-width:62ch;margin:0 0 18px}
+h2{font-family:var(--display);font-weight:400;font-size:34px;line-height:1.1;margin:0 0 10px;text-wrap:balance}
+h3{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--frost);margin:30px 0 12px;font-weight:600}
+h3 .n{color:var(--glow);font-variant-numeric:tabular-nums}
+
+/* Controls */
+.controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;padding:16px;background:var(--dusk);border:1px solid var(--ridge);border-radius:14px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:180px;flex:1}
+.field label{font-size:13px;color:var(--frost);font-weight:600}
+input,select{font:inherit;color:var(--snow);background:var(--night);border:1px solid var(--ridge);border-radius:10px;padding:10px 12px;width:100%}
+input[type=date]{color-scheme:dark}
+.quick{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;cursor:pointer}
+.chipbtn{background:transparent;color:var(--snow);border:1px solid var(--ridge);border-radius:999px;padding:7px 13px;font-size:14px}
+.chipbtn:hover,.chipbtn[aria-pressed="true"]{border-color:var(--glow);color:var(--glow)}
+.sun{font-size:14px;color:var(--frost);margin:14px 0 0}
+.sun b{color:var(--glow);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* Cards */
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.card{display:flex;flex-direction:column;gap:8px;padding:16px;background:var(--dusk);border:1px solid var(--ridge);border-radius:14px;border-left:4px solid var(--ridge)}
+.card.in{border-left-color:var(--glow)}
+.card .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.type{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--glow)}
+.card h4{margin:0;font-size:18px;line-height:1.3;font-weight:700;text-wrap:balance}
+.when{font-size:14px;color:var(--snow)}
+.where{font-size:14px;color:var(--frost)}
+.vibe{font-size:14px;color:var(--frost);font-style:italic}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid var(--ridge);color:var(--frost)}
+.tag.free{border-color:#5f8f73;color:#a8dcbc}
+.tag.book{border-color:#8a6a3c;color:var(--glow)}
+.tag.adult{border-color:#7d4c55;color:var(--berry)}
+.actions{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:6px}
+.actions a{font-size:14px;font-weight:600;text-decoration:none}
+.actions a:hover{text-decoration:underline}
+.add{background:transparent;border:1px solid var(--glow);color:var(--glow);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:600}
+.add[aria-pressed="true"]{background:var(--glow);color:var(--night)}
+.empty{padding:18px;border:1px dashed var(--ridge);border-radius:14px;color:var(--frost)}
+.bar .type{color:var(--berry)}
+.card.meal{border-left-color:#5f8f73}
+.foot-notes{margin-top:28px}
+.tbc{opacity:.7;font-size:.9em;white-space:nowrap}
+.tag.kid{color:#b9d6f2;border-color:#3f5f86}
+.tag.dog{color:#e8d3b0;border-color:#6b5638}
+.card.pick{border-color:#8a6a3c;border-left-color:var(--glow);box-shadow:0 0 0 1px rgba(242,181,94,.25)}
+.badge{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--glow);color:var(--night);white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+.chips .chipbtn .n{opacity:.7;margin-left:4px;font-variant-numeric:tabular-nums}
+.card.meal .type{color:#a8dcbc}
+.week{font-size:14px;color:var(--snow);margin:0;padding:0;list-style:none;display:grid;gap:2px}
+.week b{display:inline-block;min-width:3em;color:var(--frost);font-weight:600}
+a.pill{text-decoration:none;color:var(--snow)}
+.howto-lead{margin:18px 0 8px;color:var(--frost);font-size:15px}
+.howto{display:flex;flex-wrap:wrap;gap:8px;max-width:900px}
+.howto .pill{color:var(--frost)}
+.howto .pill b{color:var(--glow)}
+.howto .pill:hover{border-color:var(--glow);color:var(--snow)}
+.tonight{margin-top:26px}
+footer .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+footer .contact a{font-weight:600}
+footer a.suggest{border:1px solid var(--glow);border-radius:999px;padding:8px 16px;text-decoration:none}
+a.pill:hover{border-color:var(--glow)}
+.note{font-size:13px;color:var(--frost);margin:-4px 0 12px}
+
+/* My Day */
+#mydayBtn{position:fixed;right:18px;bottom:18px;z-index:10;background:var(--glow);color:var(--night);border:0;border-radius:999px;padding:13px 20px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+#myday{position:fixed;inset:auto 0 0 0;z-index:20;max-height:80%;overflow:auto;background:var(--dusk);border-top:2px solid var(--glow);border-radius:18px 18px 0 0;padding:20px;transform:translateY(105%);transition:transform .25s ease}
+#myday.open{transform:none}
+#myday .wrap{padding:0}
+#myday h2{font-size:28px}
+.dayitem{display:grid;grid-template-columns:84px 1fr auto;gap:12px;padding:12px 0;border-bottom:1px solid var(--ridge);align-items:start}
+.dayitem .t{font-variant-numeric:tabular-nums;color:var(--glow);font-weight:600;font-size:14px}
+.dayitem .x{background:transparent;border:1px solid var(--ridge);color:var(--frost);border-radius:8px;padding:4px 9px}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.primary{background:var(--glow);color:var(--night);border:0;border-radius:10px;padding:10px 16px;font-weight:700}
+.ghost{background:transparent;color:var(--snow);border:1px solid var(--ridge);border-radius:10px;padding:10px 16px}
+#copied{color:var(--glow);font-size:14px;align-self:center}
+textarea{width:100%;min-height:140px;font:13px/1.5 ui-monospace,Menlo,monospace;background:var(--night);color:var(--snow);border:1px solid var(--ridge);border-radius:10px;padding:10px;margin-top:10px}
+
+/* plan tabs, chooser, give */
+.plantabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}
+.plantabs button{background:transparent;color:var(--snow);border:1px solid var(--ridge);border-radius:999px;padding:6px 12px;font-size:14px}
+.plantabs button[aria-pressed="true"]{border-color:var(--glow);color:var(--night);background:var(--glow);font-weight:700}
+#chooser{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:rgba(5,10,18,.7);padding:20px}
+#chooser.open{display:flex}
+#chooser .box{background:var(--dusk);border:1px solid var(--glow);border-radius:16px;padding:20px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:12px}
+#chooser h2{font-size:24px}
+.give .type{color:#a8dcbc}
+.givebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.givebar span{color:var(--frost);font-size:14px}
+.hours{font-variant-numeric:tabular-nums;color:var(--snow);font-size:14px}
+footer{border-top:1px solid var(--ridge);color:var(--frost);font-size:14px;padding:24px 0 90px}
+footer p{max-width:64ch;margin:0 0 8px}
+
+@media (max-width:420px){.dayitem{grid-template-columns:64px 1fr auto}.hero{padding-top:30px}}
+@media (prefers-reduced-motion:reduce){#myday{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <canvas id="snow" aria-hidden="true"></canvas>
+  <div class="wrap hero">
+    <h1>Merry Little <span>Seattle</span></h1>
+    <p class="lede">Let's celebrate and come together! The Pacific Northwest is packed with winter fun: twinkling lights, holiday markets, cozy shows, Hanukkah and Kwanzaa celebrations, snowy day trips and plenty of ways to give back. Every listing here has a 2026 source behind it. Pick a tab below to get started.</p>
+    <div class="tonight" id="tonight"></div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Ways to look">
+  <div class="wrap">
+    <a href="#browse" data-v="browse">Browse all</a>
+    <a href="#build" data-v="build">Plan a day</a>
+    <a href="#anyday" data-v="anyday">Pick a date</a>
+    <a href="#place" data-v="place">Pick a place</a>
+    <a href="#bars" data-v="bars">Holiday bars</a>
+    <a href="#give" data-v="give">Give back</a>
+    <a href="#meals" data-v="meals">Community meals</a>
+  </div>
+</nav>
+
+<main class="wrap">
+  <section class="view" id="v-build" aria-labelledby="h-build">
+    <h2 id="h-build">Plan a day</h2>
+    <p class="intro">Pick a date and a part of town. You'll get what's happening there that day, what's open all season nearby, a holiday bar for the end of the night, and places nearby to give a little that are open that day.</p>
+    <div class="controls">
+      <div class="field"><label for="b-date">Date</label><input type="date" id="b-date"></div>
+      <div class="field"><label for="b-area">Where</label><select id="b-area"></select></div>
+      <div class="quick" id="b-quick" aria-label="Quick dates"></div>
+    </div>
+    <p class="sun" id="b-sun"></p>
+    <div id="b-out"></div>
+  </section>
+
+  <section class="view" id="v-anyday" aria-labelledby="h-anyday">
+    <h2 id="h-anyday">Pick a date</h2>
+    <p class="intro">Choose a day to see everything on the calendar that day, sorted by part of town. Things that run all season are under Browse all and Plan a day.</p>
+    <div class="controls">
+      <div class="field"><label for="d-date">Date</label><input type="date" id="d-date"></div>
+      <div class="field"><label for="d-region">Narrow it down</label><select id="d-region"></select></div>
+      <div class="quick" id="d-quick" aria-label="Quick dates"></div>
+    </div>
+    <p class="sun" id="d-sun"></p>
+    <div id="d-out"></div>
+  </section>
+
+  <section class="view" id="v-place" aria-labelledby="h-place">
+    <h2 id="h-place">Pick a place</h2>
+    <p class="intro">Choose a neighborhood or a day-trip town to see everything there this season, in date order. Good for planning a Woodinville afternoon or a Leavenworth weekend.</p>
+    <div class="controls">
+      <div class="field"><label for="p-area">Place</label><select id="p-area"></select></div>
+    </div>
+    <div id="p-out"></div>
+  </section>
+
+  <section class="view" id="v-browse" aria-labelledby="h-browse">
+    <h2 id="h-browse">Browse all</h2>
+    <p class="intro">Everything happening this season. Tap a type to see all of one kind, or search by name. Know something we missed? <a href="https://docs.google.com/forms/d/e/1FAIpQLSegMryN9rgqpXSHy02fnLd15AZGxu84S4fhTqB3apc_mszqzA/viewform" target="_blank" rel="noopener">Suggest an event</a>.</p>
+    <div class="controls">
+      <div class="field"><label for="s-q">Search</label><input type="search" id="s-q" placeholder="Nutcracker, tea, sledding..."></div>
+      <div class="field"><label for="s-tag">Only show</label><select id="s-tag"><option value="">Anything</option><option>Free</option><option>For kids</option><option>For dogs</option><option>For adults</option><option>Book ahead</option></select></div>
+    </div>
+    <div class="chips" id="s-cats" role="group" aria-label="Type of event"></div>
+    <div id="s-out"></div>
+  </section>
+
+  <section class="view" id="v-bars" aria-labelledby="h-bars">
+    <h2 id="h-bars">Holiday bars</h2>
+    <p class="intro">Seasonal pop-up bars dressed up for the holidays. Most come back every winter, but check each one is open for 2026 before you go.</p>
+    <div class="controls">
+      <div class="field"><label for="bar-area">Where</label><select id="bar-area"></select></div>
+    </div>
+    <div id="bar-out"></div>
+  </section>
+
+  <section class="view" id="v-give" aria-labelledby="h-give">
+    <h2 id="h-give">Give back</h2>
+    <p class="intro">Food banks, toy drives, coat drives and volunteer shifts. Pick what you can give and where, and add a day if you want to see who is open then.</p>
+    <div class="controls">
+      <div class="field"><label for="gv-area">Where</label><select id="gv-area"></select></div>
+      <div class="field"><label for="gv-date">Open on (optional)</label><input type="date" id="gv-date"></div>
+    </div>
+    <div class="chips" id="gv-kinds" role="group" aria-label="What you can give"></div>
+    <div id="gv-out"></div>
+  </section>
+
+  <section class="view" id="v-meals" aria-labelledby="h-meals">
+    <h2 id="h-meals">Community meals</h2>
+    <p class="intro">Free hot meals around Seattle. Most are open to anyone with no ID or sign-up; the few that serve a specific group say so. Pick a day to see who is serving. Hours come from each program's latest listing and can change, especially around holidays, so call ahead when you can.</p>
+    <div class="controls">
+      <div class="field"><label for="m-date">Day</label><input type="date" id="m-date"></div>
+      <div class="field"><label for="m-region">Where</label><select id="m-region"><option value="">All of Seattle</option><option>North Seattle</option><option>Central Seattle</option></select></div>
+      <div class="quick" id="m-quick" aria-label="Quick days"></div>
+    </div>
+    <div id="m-out"></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Listings are checked against 2026 sources and updated through the season. Times and tickets change, so confirm on the event page before you head out.</p>
+    <p>Holiday pop-up bars return most years; check that each one is open for 2026 before you go.</p>
+    <p class="contact"><a class="suggest" href="https://docs.google.com/forms/d/e/1FAIpQLSegMryN9rgqpXSHy02fnLd15AZGxu84S4fhTqB3apc_mszqzA/viewform" target="_blank" rel="noopener">Suggest an event</a> <a href="https://docs.google.com/forms/d/e/1FAIpQLSegMryN9rgqpXSHy02fnLd15AZGxu84S4fhTqB3apc_mszqzA/viewform" target="_blank" rel="noopener">Fix something or say hi</a></p>
+    <p>Suggestions are read by a person and added once we can confirm them.</p>
+    <p id="updated"></p>
+  </div>
+</footer>
+
+<button id="mydayBtn" type="button" aria-controls="myday" aria-expanded="false">My days (0)</button>
+<section id="myday" role="dialog" aria-modal="false" aria-labelledby="h-myday">
+  <div class="wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <h2 id="h-myday">My days</h2>
+      <button class="ghost" type="button" id="closeDay">Close</button>
+    </div>
+    <div class="plantabs" id="planTabs" aria-label="Your planned days"></div>
+    <p class="note" id="dayDate"></p>
+    <div id="dayList"></div>
+    <div class="row">
+      <button class="primary" type="button" id="copyDay">Copy my day</button>
+      <button class="ghost" type="button" id="copyAll">Copy all days</button>
+      <button class="ghost" type="button" id="clearDay">Delete this day</button>
+      <span id="copied" role="status"></span>
+    </div>
+    <textarea id="dayText" readonly aria-label="Your day as text"></textarea>
+  </div>
+</section>
+
+<div id="chooser" role="dialog" aria-modal="true" aria-labelledby="h-choose">
+  <div class="box">
+    <h2 id="h-choose">Add to which day?</h2>
+    <p class="note" id="chooseName" style="margin:0"></p>
+    <div class="quick" id="chooseQuick"></div>
+    <div class="field"><label for="chooseDate">Or pick a date</label><input type="date" id="chooseDate"></div>
+    <div class="row" style="margin:0"><button class="primary" type="button" id="chooseOk">Add it</button><button class="ghost" type="button" id="chooseCancel">Cancel</button></div>
+  </div>
+</div>
+<script type="application/json" id="data-give">__GIVE__</script>
+<script type="application/json" id="data-drives">__DRIVES__</script>
+<script type="application/json" id="data-meals">__MEALS__</script>
+<script type="application/json" id="data-events">__EVENTS__</script>
+<script type="application/json" id="data-bars">__BARS__</script>
+<script>
+(function(){
+const EV = JSON.parse(document.getElementById('data-events').textContent);
+const BARS = JSON.parse(document.getElementById('data-bars').textContent);
+const GIVE = JSON.parse(document.getElementById('data-give').textContent);
+const DRIVES = JSON.parse(document.getElementById('data-drives').textContent);
+const MEALS = JSON.parse(document.getElementById('data-meals').textContent);
+const UPDATED = "__UPDATED__";
+const SEASON_START = "2026-11-01", SEASON_END = "2027-01-10";
+const REGION_ORDER = ["North Seattle","Central Seattle","South & West Seattle","North of Seattle","Eastside","South Sound","Mountains","Islands & Peninsula","Farther Afield"];
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- dates ---------- */
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parseIso = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const fmtLong = s => parseIso(s).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
+const fmtShort = s => parseIso(s).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+function clampSeason(s){ return s < SEASON_START ? SEASON_START : (s > SEASON_END ? SEASON_END : s); }
+function todayIso(){ return iso(new Date()); }
+function nextDow(fromIso, dow){ const d = parseIso(fromIso); const add = (dow - d.getDay() + 7) % 7; d.setDate(d.getDate()+add); return iso(d); }
+
+/* Sunset for Seattle (NOAA approximation). Lights look best after this. */
+function sunset(isoDate){
+  const lat = 47.6062, lon = -122.3321, zen = 90.833 * Math.PI/180;
+  const d = parseIso(isoDate);
+  const start = new Date(d.getFullYear(),0,0);
+  const N = Math.round((d - start)/864e5);
+  const g = 2*Math.PI/365*(N-1+(18-12)/24);
+  const eqt = 229.18*(0.000075+0.001868*Math.cos(g)-0.032077*Math.sin(g)-0.014615*Math.cos(2*g)-0.040849*Math.sin(2*g));
+  const decl = 0.006918-0.399912*Math.cos(g)+0.070257*Math.sin(g)-0.006758*Math.cos(2*g)+0.000907*Math.sin(2*g)-0.002697*Math.cos(3*g)+0.00148*Math.sin(3*g);
+  const la = lat*Math.PI/180;
+  const ha = Math.acos(Math.cos(zen)/(Math.cos(la)*Math.cos(decl)) - Math.tan(la)*Math.tan(decl));
+  const utcMin = 720 - 4*(lon - ha*180/Math.PI) - eqt;
+  /* Pacific offset: PDT until first Sunday of November 2026 (Nov 1), PST after; PDT again from Mar 14, 2027 */
+  const off = (isoDate < "2026-11-01" || isoDate >= "2027-03-14") ? -420 : -480;
+  let m = Math.round(utcMin + off); m = (m + 1440) % 1440;
+  const h = Math.floor(m/60), mm = m % 60;
+  return ((h % 12) || 12) + ":" + pad(mm) + (h < 12 ? " am" : " pm");
+}
+
+/* first clock time in a free-text time string, in minutes; 9999 if none */
+function timeKey(t){
+  if(!t) return 9999;
+  const s = t.toLowerCase();
+  if(/^\s*(morning)/.test(s)) return 540;
+  if(/^\s*(afternoon|daytime)/.test(s)) return 780;
+  if(/^\s*(evening|after dark|dusk|nightly)/.test(s)) return 1080;
+  let m = s.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?/);
+  if(!m) return 9999;
+  let h = +m[1], mi = +(m[2]||0); const ap = m[3] || (s.match(/\b(am|pm)\b/)||[])[1];
+  if(h > 23) return 9999;
+  if(ap){ if(ap.startsWith("p") && h < 12) h += 12; if(ap.startsWith("a") && h === 12) h = 0; }
+  else if(h >= 1 && h <= 7) h += 12;
+  return h*60 + mi;
+}
+function clock(t){ if(!/\d/.test(t||"")) return ""; const k = timeKey(t); if(k === 9999) return ""; const h = Math.floor(k/60), m = k%60; return ((h%12)||12)+":"+pad(m)+(h<12?" am":" pm"); }
+
+/* ---------- places ---------- */
+const AREAS = {};
+EV.forEach(e => { (AREAS[e.r] ||= new Set()).add(e.a); });
+BARS.forEach(b => { (AREAS[b.r] ||= new Set()).add(b.a); });
+GIVE.forEach(g => { (AREAS[g.r] ||= new Set()).add(g.a); });
+function fillPlaces(sel, opts){
+  let h = opts.anywhere ? '<option value="">Anywhere</option>' : "";
+  REGION_ORDER.forEach(r => {
+    if(!AREAS[r]) return;
+    h += '<optgroup label="'+esc(r)+'">';
+    if(opts.regions) h += '<option value="r:'+esc(r)+'">All of '+esc(r)+'</option>';
+    if(opts.areas) [...AREAS[r]].sort().forEach(a => { h += '<option value="a:'+esc(a)+'">'+esc(a)+'</option>'; });
+    h += '</optgroup>';
+  });
+  sel.innerHTML = h;
+}
+function matchPlace(item, v){
+  if(!v) return true;
+  const k = v.slice(0,2), val = v.slice(2);
+  return k === "r:" ? item.r === val : item.a === val;
+}
+function placeLabel(v){ if(!v) return "anywhere"; return v.startsWith("r:") ? v.slice(2) : v.slice(2); }
+
+/* ---------- data helpers ---------- */
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const dated = e => e.d.length > 0;
+const onDate = (e, d) => e.d.includes(d);
+const byTime = (a,b) => timeKey(a.tm) - timeKey(b.tm) || a.n.localeCompare(b.n);
+const byFirst = (a,b) => (a.d[0]||"9999").localeCompare(b.d[0]||"9999") || a.n.localeCompare(b.n);
+/* give-back hours for a date: h is Mon..Sun */
+function giveHours(g, d){
+  const dt = parseIso(d), wd = dt.getDay();
+  const h = g.h[(wd + 6) % 7];
+  if(!h) return "";
+  if(g.nth){ const n = Math.ceil(dt.getDate()/7); if(!g.nth.includes(n)) return ""; }
+  return h;
+}
+const HOLIDAY_NOTE = {"2026-11-26":"Thanksgiving","2026-12-24":"Christmas Eve","2026-12-25":"Christmas Day","2026-12-31":"New Year's Eve","2027-01-01":"New Year's Day"};
+
+/* ---------- My Day (several days, saved in this browser) ---------- */
+let plans = {};   /* { "2026-12-10": ["e:12","b:3","g:4"], ... } */
+let activeDay = "";
+try {
+  const s = JSON.parse(localStorage.getItem("merry-plans")||"null");
+  if(s && s.plans) { plans = s.plans; activeDay = s.active || ""; }
+  else { const old = JSON.parse(localStorage.getItem("merry-day")||"null");
+    if(old && Array.isArray(old.ids) && old.ids.length && old.date) plans[old.date] = old.ids.map(i => "e:"+i); }
+} catch(e) {}
+function savePlans(){ try { localStorage.setItem("merry-plans", JSON.stringify({plans, active: activeDay})); } catch(e) {} }
+const byId = Object.fromEntries(EV.map(e => [e.id, e]));
+const giveById = Object.fromEntries(GIVE.map(g => [g.id, g]));
+function itemOf(key){
+  const [k, v] = key.split(":"); const i = +v;
+  if(k === "e" && byId[i]) { const e = byId[i]; return {name:e.n, tm:e.tm, loc:e.loc||e.a, u:e.u}; }
+  if(k === "b" && BARS[i]) { const b = BARS[i]; return {name:b.n + " (holiday pop-up bar)", tm:b.tm || "evening", loc:b.loc, u:""}; }
+  if(k === "d") { const x = DRIVES.find(z => z.id === i); if(x) return {name:(x.k.includes("Time") ? "Volunteer: " : "Give: ") + x.n, tm:x.sch, loc:x.loc, u:x.u}; }
+  if(k === "g" && giveById[i]) { const g = giveById[i]; return {name:"Give: " + g.n, tm:"", loc:g.loc, u:g.u, give:g}; }
+  return null;
+}
+function inPlan(key, d){ return d ? (plans[d]||[]).includes(key) : Object.values(plans).some(l => l.includes(key)); }
+function addTo(key, d){
+  (plans[d] ||= []); if(!plans[d].includes(key)) plans[d].push(key);
+  activeDay = d; savePlans(); renderDay(); refreshButtons();
+  flash("Added to " + fmtShort(d));
+}
+function removeFrom(key, d){
+  const ds = d ? [d] : Object.keys(plans);
+  ds.forEach(x => { if(plans[x]) { plans[x] = plans[x].filter(k => k !== key); if(!plans[x].length) delete plans[x]; } });
+  if(!plans[activeDay]) activeDay = Object.keys(plans).sort()[0] || "";
+  savePlans(); renderDay(); refreshButtons();
+}
+function flash(msg){ const b = $("#mydayBtn"); b.dataset.msg = msg; b.textContent = msg; clearTimeout(flash.t); flash.t = setTimeout(refreshButtons, 1600); }
+function totalItems(){ return Object.values(plans).reduce((n,l) => n + l.length, 0); }
+function refreshButtons(){
+  document.querySelectorAll("[data-key]").forEach(b => {
+    const on = inPlan(b.dataset.key, b.dataset.date || "");
+    b.setAttribute("aria-pressed", on); b.textContent = on ? "In my day" : "+ My day";
+    const c = b.closest(".card"); if(c) c.classList.toggle("in", on);
+  });
+  const days = Object.keys(plans).length;
+  $("#mydayBtn").textContent = "My days (" + days + ")";
+}
+function sortedItems(d){
+  return (plans[d]||[]).map(k => ({k, it:itemOf(k)})).filter(x => x.it)
+    .sort((a,b) => timeKey(a.it.tm || (a.it.give ? giveHours(a.it.give, d) : "")) - timeKey(b.it.tm || (b.it.give ? giveHours(b.it.give, d) : "")));
+}
+function renderDay(){
+  const ds = Object.keys(plans).sort();
+  if(ds.length && !plans[activeDay]) activeDay = ds[0];
+  $("#planTabs").innerHTML = ds.map(d => '<button type="button" data-plan="'+d+'" aria-pressed="'+(d===activeDay)+'">'+esc(fmtShort(d))+' ('+plans[d].length+')</button>').join("");
+  if(!ds.length){
+    $("#dayDate").textContent = "Tap \"+ My day\" on anything. You can plan as many days as you like; they stay saved in this browser.";
+    $("#dayList").innerHTML = ""; $("#dayText").value = ""; return;
+  }
+  const d = activeDay;
+  $("#dayDate").textContent = fmtLong(d) + ". Sunset " + sunset(d) + "." + (HOLIDAY_NOTE[d] ? " " + HOLIDAY_NOTE[d] + ": hours may differ, so check ahead." : "");
+  $("#dayList").innerHTML = sortedItems(d).map(({k,it}) => {
+    const t = it.give ? (giveHours(it.give, d) || "Closed this day") : (clock(it.tm) || "Anytime");
+    return '<div class="dayitem"><div class="t">'+esc(t)+'</div><div><strong>'+esc(it.name)+'</strong><div class="where">'+esc(it.loc)+'</div></div><button class="x" type="button" data-rm="'+k+'" aria-label="Remove '+esc(it.name)+'">Remove</button></div>';
+  }).join("");
+  $("#dayText").value = dayText(d);
+}
+function dayText(d){
+  const items = sortedItems(d); if(!items.length) return "";
+  let s = "My Merry Little Seattle day, " + fmtLong(d) + "\nSunset " + sunset(d) + "\n\n";
+  items.forEach(({it}) => {
+    const t = it.give ? (giveHours(it.give, d) || "") : (clock(it.tm) || "Anytime");
+    s += (t ? t + "  " : "") + it.name + "\n";
+    if(it.loc) s += "    " + it.loc + "\n";
+    if(it.u) s += "    " + it.u + "\n";
+  });
+  return s;
+}
+function allText(){ return Object.keys(plans).sort().map(dayText).filter(Boolean).join("\n\n"); }
+$("#mydayBtn").addEventListener("click", () => { const o = $("#myday").classList.toggle("open"); $("#mydayBtn").setAttribute("aria-expanded", o); });
+$("#closeDay").addEventListener("click", () => { $("#myday").classList.remove("open"); $("#mydayBtn").setAttribute("aria-expanded", false); });
+$("#planTabs").addEventListener("click", ev => { const b = ev.target.closest("[data-plan]"); if(!b) return; activeDay = b.dataset.plan; savePlans(); renderDay(); });
+$("#clearDay").addEventListener("click", () => { if(!activeDay) return; delete plans[activeDay]; activeDay = Object.keys(plans).sort()[0] || ""; savePlans(); renderDay(); refreshButtons(); });
+$("#dayList").addEventListener("click", ev => { const b = ev.target.closest("[data-rm]"); if(b) removeFrom(b.dataset.rm, activeDay); });
+async function copyText(t, okMsg){
+  if(!t) return;
+  try { await navigator.clipboard.writeText(t); $("#copied").textContent = okMsg; }
+  catch(e) { $("#dayText").value = t; $("#dayText").select(); $("#copied").textContent = "Selected. Press copy on your keyboard."; }
+}
+$("#copyDay").addEventListener("click", () => copyText($("#dayText").value, "Copied this day. Paste it into a text."));
+$("#copyAll").addEventListener("click", () => copyText(allText(), "Copied every day."));
+
+/* choose-a-day dialog, for things picked outside a dated view */
+let pendingKey = "";
+function openChooser(key, name, dates){
+  pendingKey = key;
+  $("#chooseName").textContent = name;
+  const up = dates.filter(d => d >= todayIso()).slice(0, 8);
+  const planDays = Object.keys(plans).sort().filter(d => !up.includes(d)).slice(0, 4);
+  $("#chooseQuick").innerHTML = up.concat(planDays).map(d => '<button type="button" class="chipbtn" data-v="'+d+'">'+esc(fmtShort(d))+(planDays.includes(d) ? " (planned)" : "")+'</button>').join("");
+  const ci = $("#chooseDate"); ci.min = SEASON_START; ci.max = SEASON_END; ci.value = up[0] || activeDay || clampSeason(todayIso());
+  $("#chooser").classList.add("open"); ci.focus();
+}
+function closeChooser(){ $("#chooser").classList.remove("open"); pendingKey = ""; }
+$("#chooseQuick").addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if(!b) return; addTo(pendingKey, b.dataset.v); closeChooser(); });
+$("#chooseOk").addEventListener("click", () => { const v = $("#chooseDate").value; if(v) addTo(pendingKey, v); closeChooser(); });
+$("#chooseCancel").addEventListener("click", closeChooser);
+$("#chooser").addEventListener("click", ev => { if(ev.target.id === "chooser") closeChooser(); });
+document.addEventListener("keydown", ev => { if(ev.key === "Escape") closeChooser(); });
+
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-key]"); if(!b) return;
+  const key = b.dataset.key, d = b.dataset.date || "";
+  if(inPlan(key, d)) { removeFrom(key, d || null); return; }
+  if(d) { addTo(key, d); return; }
+  const [k, v] = key.split(":");
+  const dates = k === "e" ? (byId[+v]?.d || []) : [];
+  if(dates.length === 1) { addTo(key, dates[0]); return; }
+  openChooser(key, itemOf(key)?.name || "", dates);
+});
+
+/* ---------- cards ---------- */
+function link(e){
+  if(e.u) return '<a href="'+esc(e.u)+'" target="_blank" rel="noopener">Event page</a>';
+  const q = encodeURIComponent(e.n + " " + (e.a||"Seattle") + " 2026");
+  return '<a href="https://www.google.com/search?q='+q+'" target="_blank" rel="noopener">Look it up</a>';
+}
+function addBtn(key, d){ const on = inPlan(key, d||""); return '<button class="add" type="button" data-key="'+key+'" data-date="'+esc(d||"")+'" aria-pressed="'+on+'">'+(on?"In my day":"+ My day")+'</button>'; }
+function card(e, dateCtx){
+  const tags = e.g.map(t => '<span class="tag '+({"Free":"free","Book ahead":"book","For adults":"adult","For kids":"kid","For dogs":"dog"}[t]||"")+'">'+esc(t)+'</span>').join("");
+  return '<article class="card'+(e.p ? ' pick' : '')+'">' +
+    '<div class="top"><span class="type">'+esc(e.c === "Day Trips" ? e.t + " · day trip" : (e.c === "Kids" ? "Kids · " + e.t : e.t))+'</span>'+(e.p ? '<span class="badge">Top pick</span>' : '')+'</div>' +
+    '<h4>'+esc(e.n)+'</h4>' +
+    '<div class="when">'+esc(e.dt)+(e.tm ? '<br>'+esc(e.tm) : '')+'</div>' +
+    '<div class="where">'+esc(e.loc ? e.loc + (e.loc.includes(e.a) ? "" : " · " + e.a) : e.a)+'</div>' +
+    (e.v ? '<div class="vibe">'+esc(e.v)+'</div>' : '') +
+    (tags ? '<div class="tags">'+tags+'</div>' : '') +
+    '<div class="actions">'+link(e)+addBtn("e:"+e.id, dateCtx)+'</div>' +
+  '</article>';
+}
+function barCard(b, dateCtx){
+  const i = BARS.indexOf(b), q = encodeURIComponent(b.n + " Seattle 2026");
+  return '<article class="card bar'+(b.p?' pick':'')+'"><span class="type">Holiday pop-up bar</span>'+(b.p?'<span class="badge">Top pick</span>':'')+'<h4>'+esc(b.n)+'</h4>' +
+    '<div class="when">'+(b.ok ? esc(b.w) : 'Usually '+esc(b.w)+' <span class="tbc">(2026 dates not announced yet)</span>')+(b.tm ? '<br>'+esc(b.tm) : '')+'</div>' +
+    '<div class="where">'+esc(b.loc)+' · '+esc(b.a)+'</div>' +
+    '<div class="vibe">'+esc(b.v)+'</div>' +
+    '<div class="actions"><a href="https://www.google.com/search?q='+q+'" target="_blank" rel="noopener">Check it is open</a>'+addBtn("b:"+i, dateCtx)+'</div></article>';
+}
+function giveCard(g, d){
+  const h = d ? giveHours(g, d) : "";
+  const week = DOW.slice(1).concat("Sun").map((n,i) => g.h[i] ? n : null).filter(Boolean).join(", ");
+  return '<article class="card give"><span class="type">Give · '+esc(g.k.join(", "))+'</span><h4>'+esc(g.n)+'</h4>' +
+    (d ? '<div class="hours">'+(h ? fmtShort(d)+": "+esc(h) : "Not open "+fmtShort(d))+'</div>' : '<div class="hours">Open '+esc(week)+(g.nth?" (1st and 3rd only)":"")+'</div>') +
+    '<div class="where">'+esc(g.loc)+' · '+esc(g.a)+'</div>' +
+    '<div class="vibe">'+esc(g.v)+'</div>' +
+    '<div class="actions"><a href="'+esc(g.u)+'" target="_blank" rel="noopener">Their site</a>'+(!d || h ? addBtn("g:"+g.id, d) : "")+'</div></article>';
+}
+function driveCard(x, d){
+  const vol = x.k.includes("Time") && x.k.length === 1;
+  const span = x.s ? (x.s === x.e ? fmtShort(x.s) : "Runs " + fmtShort(x.s) + " to " + fmtShort(x.e)) : "Anytime this season";
+  return '<article class="card give"><span class="type">'+(vol ? "Volunteer" : "Drive · " + esc(x.k.filter(k=>k!=="Time").join(", ")))+'</span><h4>'+esc(x.n)+'</h4>' +
+    '<div class="hours">'+esc(span)+(x.sch ? '<br>'+esc(x.sch) : '')+'</div>' +
+    '<div class="where">'+esc(x.loc)+' · '+esc(x.a)+'</div>' +
+    '<div class="vibe">'+esc(x.v)+'</div>' +
+    '<div class="actions"><a href="'+esc(x.u)+'" target="_blank" rel="noopener">Details</a>'+(d ? addBtn("d:"+x.id, d) : "")+'</div></article>';
+}
+function section(title, items, render){
+  return '<h3>'+esc(title)+' <span class="n">'+items.length+'</span></h3>' +
+    (items.length ? '<div class="list">'+items.map(render).join("")+'</div>' : '<p class="empty">Nothing listed yet. New events get added through the season.</p>');
+}
+
+/* ---------- give a little ---------- */
+const GIVE_KINDS = ["Food","Clothes","Toys","Pet supplies","Time"];
+let giveKind = "";
+try { giveKind = localStorage.getItem("merry-give") || ""; } catch(e) {}
+function giveBlock(d, p){
+  let h = '<h3>Give a little</h3><div class="givebar" id="giveBar"><span>I can give:</span>' +
+    GIVE_KINDS.map(k => '<button type="button" class="chipbtn" data-give="'+k+'" aria-pressed="'+(k===giveKind)+'">'+(k==="Time"?"My time":k)+'</button>').join("") + '</div>';
+  if(!giveKind) return h + '<p class="note">Pick one and you will see places nearby that take it and are open that day.</p>';
+  if(HOLIDAY_NOTE[d]) h += '<p class="note">'+HOLIDAY_NOTE[d]+': most places run holiday hours or close. Call before you go.</p>';
+  const takes = GIVE.filter(g => g.k.includes(giveKind));
+  const open = takes.filter(g => giveHours(g, d));
+  const reg = p ? (p.startsWith("r:") ? p.slice(2) : ((EV.find(e=>e.a===p.slice(2))||BARS.find(b=>b.a===p.slice(2))||GIVE.find(g=>g.a===p.slice(2))||{}).r)) : "";
+  let near = reg ? open.filter(g => g.r === reg) : open;
+  let label = reg ? "Open " + fmtShort(d) + " in " + reg : "Open " + fmtShort(d);
+  if(!near.length && open.length){ near = open; label = "Nothing in " + reg + " that day, but these are open elsewhere"; }
+  const drivesOn = DRIVES.filter(x => x.s && x.s <= d && d <= x.e && x.k.includes(giveKind));
+  const drivesAny = DRIVES.filter(x => !x.s && x.k.includes(giveKind));
+  if(near.length) h += '<p class="note">'+esc(label)+'. Hours are from each place\'s latest posting; a quick call first never hurts.</p><div class="list">'+near.map(g => giveCard(g, d)).join("")+'</div>';
+  else if(takes.length) h += '<p class="empty">No drop-off place on our list takes that on '+esc(fmtShort(d))+'. Try another day, or check these.</p><div class="list">'+takes.map(g => giveCard(g, "")).join("")+'</div>';
+  if(drivesOn.length) h += '<h3>'+(giveKind === "Time" ? "Volunteer shifts and drives" : "Holiday drives")+' running '+esc(fmtShort(d))+' <span class="n">'+drivesOn.length+'</span></h3><div class="list">'+drivesOn.map(x => driveCard(x, d)).join("")+'</div>';
+  if(drivesAny.length) h += '<h3>Anytime this season <span class="n">'+drivesAny.length+'</span></h3><div class="list">'+drivesAny.map(x => driveCard(x, d)).join("")+'</div>';
+  if(!near.length && !takes.length && !drivesOn.length && !drivesAny.length) h += '<p class="empty">Nothing on our list for that yet.</p>';
+  return h;
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-give]"); if(!b) return;
+  giveKind = giveKind === b.dataset.give ? "" : b.dataset.give;
+  try { localStorage.setItem("merry-give", giveKind); } catch(e) {}
+  renderBuild();
+});
+
+/* ---------- free meals ---------- */
+function mealHours(m, d){
+  const dt = parseIso(d), i = (dt.getDay() + 6) % 7, h = m.h[i];
+  if(!h) return "";
+  if(m.skip && m.skip.includes(d)) return "";
+  if(m.last){ const nx = new Date(dt); nx.setDate(dt.getDate() + 7); if(nx.getMonth() === dt.getMonth()) return ""; }
+  return h;
+}
+const WEEK = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+function mealCard(m, d){
+  const h = d ? mealHours(m, d) : "";
+  const runs = []; m.h.forEach((x,i) => { if(!x) return; const r = runs[runs.length-1]; if(r && r.x === x && r.e === i-1) r.e = i; else runs.push({x, s:i, e:i}); });
+  const sched = '<ul class="week">' + runs.map(r => '<li><b>'+(r.s === r.e ? WEEK[r.s] : (r.s === 0 && r.e === 6 ? "Daily" : WEEK[r.s]+"-"+WEEK[r.e]))+'</b> '+esc(r.x)+(m.last ? " (last Sunday of the month)" : "")+'</li>').join("") + '</ul>';
+  return '<article class="card meal"><span class="type">Free · '+esc(m.who)+'</span><h4>'+esc(m.n)+'</h4>' +
+    (d ? '<div class="when"><b>'+esc(h)+'</b></div>' : sched) +
+    '<div class="where">'+esc(m.loc)+' · '+esc(m.a)+'</div>' +
+    '<div class="vibe">'+esc(m.v)+'</div>' +
+    '<div class="actions"><a href="'+esc(m.u)+'" target="_blank" rel="noopener">More info</a>'+(m.phone ? '<a href="tel:'+m.phone.replace(/\D/g,"")+'">'+esc(m.phone)+'</a>' : "")+'</div></article>';
+}
+function renderMeals(){
+  const d = $("#m-date").value, r = $("#m-region").value;
+  if(!d) return;
+  const i = (parseIso(d).getDay() + 6) % 7;
+  const pool = MEALS.filter(m => !r || m.r === r);
+  const on = pool.filter(m => mealHours(m, d)).sort((a,b) => a.t[i] - b.t[i] || a.n.localeCompare(b.n));
+  let h = HOLIDAY_NOTE[d] ? '<p class="note">'+HOLIDAY_NOTE[d]+': many programs change hours, close, or serve a special holiday meal. Please call first.</p>' : "";
+  h += '<h3>Serving '+esc(fmtShort(d))+' <span class="n">'+on.length+'</span></h3>' +
+    (on.length ? '<div class="list">'+on.map(m => mealCard(m, d)).join("")+'</div>' : '<p class="empty">Nothing on our list for that day here. Try All of Seattle, or call 211 for more options.</p>');
+  h += '<h3>Every place on the list, all week <span class="n">'+pool.length+'</span></h3><div class="list">'+pool.map(m => mealCard(m, "")).join("")+'</div>';
+  h += '<div class="foot-notes"><p class="note">For more free food, shelter or other help any time, call or text <a href="tel:211">211</a> (Washington 211).</p><p class="note">Want to help serve? Many of these programs need volunteers. <a href="#give" data-volunteer>See volunteer shifts on Give back</a>.</p></div>';
+  $("#m-out").innerHTML = h;
+}
+$("#m-region").addEventListener("change", renderMeals);
+$("#m-date").addEventListener("change", renderMeals);
+
+/* ---------- holiday bars view ---------- */
+function renderBars(){
+  const p = $("#bar-area").value;
+  const items = BARS.filter(b => matchPlace(b,p)).sort((a,b) => a.a.localeCompare(b.a) || a.n.localeCompare(b.n));
+  let h = "";
+  if(!items.length) h = '<p class="empty">No pop-up bars on our list in '+esc(placeLabel(p))+'. Try All of '+esc((AREA_REGION[p.slice(2)]||"Seattle"))+' or Anywhere.</p>';
+  else if(!p) REGION_ORDER.forEach(r => { const g = items.filter(b => b.r === r); if(g.length) h += '<h3>'+esc(r)+' <span class="n">'+g.length+'</span></h3><div class="list">'+g.map(b => barCard(b)).join("")+'</div>'; });
+  else h = '<h3>'+esc(placeLabel(p))+' <span class="n">'+items.length+'</span></h3><div class="list">'+items.map(b => barCard(b)).join("")+'</div>';
+  $("#bar-out").innerHTML = h;
+  refreshButtons();
+}
+$("#bar-area").addEventListener("change", renderBars);
+
+/* ---------- give back view ---------- */
+let gvKind = "";
+function renderGive(){
+  const p = $("#gv-area").value, d = $("#gv-date").value;
+  $("#gv-kinds").innerHTML = [["","Anything"]].concat(GIVE_KINDS.map(k => [k, k === "Time" ? "My time" : k])).map(([v,l]) => '<button type="button" class="chipbtn" data-gk="'+v+'" aria-pressed="'+(v===gvKind)+'">'+esc(l)+'</button>').join("");
+  let places = GIVE.filter(g => matchPlace(g,p) && (!gvKind || g.k.includes(gvKind)));
+  let h = "";
+  if(d){
+    if(HOLIDAY_NOTE[d]) h += '<p class="note">'+HOLIDAY_NOTE[d]+': most places run holiday hours or close. Call before you go.</p>';
+    const open = places.filter(g => giveHours(g, d));
+    h += '<h3>Open '+esc(fmtShort(d))+' <span class="n">'+open.length+'</span></h3>' + (open.length ? '<div class="list">'+open.map(g => giveCard(g, d)).join("")+'</div>' : '<p class="empty">None of these are open that day. Clear the date to see everyone.</p>');
+  } else {
+    h += '<h3>Places to drop off'+(p ? ' in '+esc(placeLabel(p)) : '')+' <span class="n">'+places.length+'</span></h3>' + (places.length ? '<div class="list">'+places.map(g => giveCard(g, "")).join("")+'</div>' : '<p class="empty">Nothing on our list here yet. Try a wider area.</p>');
+  }
+  const drives = DRIVES.filter(x => (!gvKind || x.k.includes(gvKind)) && (!d || !x.s || (x.s <= d && d <= x.e)));
+  if(drives.length) h += '<h3>'+(gvKind === "Time" ? "Volunteer shifts and drives" : "Holiday drives")+' around the region <span class="n">'+drives.length+'</span></h3><div class="list">'+drives.map(x => driveCard(x, d)).join("")+'</div>';
+  h += '<p class="note">Hours come from each place\'s latest posting. A quick call first never hurts, and never leave donations outside when a place is closed.</p>';
+  $("#gv-out").innerHTML = h;
+  refreshButtons();
+}
+document.addEventListener("click", ev => { if(ev.target.closest("[data-volunteer]")) gvKind = "Time"; });
+$("#gv-kinds").addEventListener("click", ev => { const b = ev.target.closest("[data-gk]"); if(!b) return; gvKind = b.dataset.gk; renderGive(); });
+["#gv-area","#gv-date"].forEach(s => $(s).addEventListener("change", renderGive));
+
+/* quick date buttons */
+function quick(container, input, onPick){
+  const t = clampSeason(todayIso());
+  const opts = [["Today", t], ["This Saturday", nextDow(t,6)], ["This Sunday", nextDow(t,0)], ["Christmas Eve","2026-12-24"], ["New Year's Eve","2026-12-31"]];
+  container.innerHTML = opts.map(([l,v]) => '<button type="button" class="chipbtn" data-v="'+v+'">'+l+'</button>').join("");
+  container.addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if(!b) return; input.value = b.dataset.v; onPick(); });
+}
+
+/* ---------- views ---------- */
+function renderBuild(){
+  const d = $("#b-date").value, p = $("#b-area").value;
+  if(!d) return;
+  $("#b-sun").innerHTML = fmtLong(d) + ". Sunset <b>" + sunset(d) + "</b>, so lights are on from about then.";
+  const today = EV.filter(e => onDate(e,d) && matchPlace(e,p)).sort(byTime);
+  const season = EV.filter(e => !dated(e) && matchPlace(e,p)).sort((a,b)=>a.n.localeCompare(b.n));
+  let bars = BARS.filter(b => matchPlace(b,p));
+  if(!bars.length && p.startsWith("a:")){ const reg = (EV.find(e=>e.a===p.slice(2))||BARS.find(b=>b.a===p.slice(2))||{}).r; bars = BARS.filter(b => b.r === reg); }
+  $("#b-out").innerHTML =
+    section("Happening " + fmtShort(d) + " in " + placeLabel(p), today, e => card(e,d)) +
+    section("Open all season nearby", season, e => card(e,d)) +
+    (bars.length ? '<h3>End the night: holiday pop-up bars <span class="n">'+bars.length+'</span></h3><p class="note">These come back most winters. Check each one is open for 2026.</p><div class="list">'+bars.map(b => barCard(b,d)).join("")+'</div>' : "") +
+    giveBlock(d, p);
+  refreshButtons();
+}
+function renderAnyday(){
+  const d = $("#d-date").value, p = $("#d-region").value;
+  if(!d) return;
+  $("#d-sun").innerHTML = fmtLong(d) + ". Sunset <b>" + sunset(d) + "</b>.";
+  const items = EV.filter(e => onDate(e,d) && matchPlace(e,p));
+  let h = '<h3>On the calendar <span class="n">'+items.length+'</span></h3>';
+  if(!items.length) h += '<p class="empty">Nothing with a date yet for this day. Try Plan a day or Browse all to see things that run all season.</p>';
+  REGION_ORDER.forEach(r => {
+    const g = items.filter(e => e.r === r).sort(byTime);
+    if(g.length) h += section(r, g, e => card(e,d));
+  });
+  $("#d-out").innerHTML = h;
+  refreshButtons();
+}
+function renderPlace(){
+  const p = $("#p-area").value;
+  if(!p){ $("#p-out").innerHTML = '<p class="empty">Choose a neighborhood or town above to see what is happening there.</p>'; return; }
+  const items = EV.filter(e => matchPlace(e,p));
+  const withD = items.filter(dated).sort(byFirst), without = items.filter(e=>!dated(e)).sort((a,b)=>a.n.localeCompare(b.n));
+  const bars = BARS.filter(b => matchPlace(b,p));
+  const gives = GIVE.filter(g => matchPlace(g,p));
+  let h = "";
+  if(withD.length) h += section("On the calendar in " + placeLabel(p), withD, e => card(e));
+  if(without.length) h += section("Open all season in " + placeLabel(p), without, e => card(e));
+  if(bars.length) h += '<h3>Holiday pop-up bars <span class="n">'+bars.length+'</span></h3><p class="note">These come back most winters. Check each one is open for 2026.</p><div class="list">'+bars.map(b => barCard(b)).join("")+'</div>';
+  if(gives.length) h += '<h3>Places to give <span class="n">'+gives.length+'</span></h3><div class="list">'+gives.map(g => giveCard(g, "")).join("")+'</div>';
+  $("#p-out").innerHTML = h || '<p class="empty">Nothing listed in '+esc(placeLabel(p))+' yet. New events get added through the season.</p>';
+  refreshButtons();
+}
+let sCat = "";
+const inCat = (e,c) => e.c === c || (c === "Kids" && e.g.includes("For kids")) || (c === "Dogs" && e.g.includes("For dogs"));
+function renderBrowse(){
+  const q = $("#s-q").value.trim().toLowerCase(), t = $("#s-tag").value;
+  const base = EV.filter(e => (!t || e.g.includes(t)) && (!q || (e.n+" "+e.v+" "+e.loc+" "+e.a+" "+e.t).toLowerCase().includes(q)));
+  const picks = base.filter(e => e.p);
+  const chips = [["", "All", base.length]].concat(picks.length ? [["*", "Top picks", picks.length]] : []).concat(CATS.map(c => [c, c, base.filter(e => inCat(e,c)).length]).filter(x => x[2] || !(q || t)));
+  if(sCat && !chips.some(x => x[0] === sCat)) sCat = "";
+  $("#s-cats").innerHTML = chips.map(([v,l,n]) => '<button type="button" class="chipbtn" data-cat="'+esc(v)+'" aria-pressed="'+(v===sCat)+'">'+esc(l)+'<span class="n">'+n+'</span></button>').join("");
+  const items = (sCat === "*" ? picks : base.filter(e => !sCat || inCat(e,sCat))).sort(byFirst);
+  let h = "";
+  if(!sCat && !q && picks.length) h += section("Top picks", picks.slice().sort(byFirst), e => card(e));
+  if(sCat === "Day Trips" && items.length){
+    h += '<p class="note" style="margin-top:20px">Grouped by direction from Seattle. Most are an hour or more each way, so check the drive or ferry before you go.</p>';
+    DT_ORDER.concat([...new Set(items.map(e => e.sg))].filter(g => !DT_ORDER.includes(g))).forEach(g => { const gi = items.filter(e => (e.sg || "") === g); if(gi.length) h += section(g || "Other day trips", gi, e => card(e)); });
+  } else if(sCat && !items.length && !q && !t){
+    h += '<h3>'+esc(sCat)+' <span class="n">0</span></h3><p class="empty">'+(EMPTY_NOTE[sCat] || "Nothing confirmed for 2026 yet. Events get added here as soon as they post their dates.")+'</p>';
+  } else h += section(sCat === "*" ? "Top picks" : (sCat || "Everything"), items, e => card(e));
+  $("#s-out").innerHTML = h;
+  refreshButtons();
+}
+$("#s-cats").addEventListener("click", ev => { const b = ev.target.closest("[data-cat]"); if(!b) return; sCat = b.dataset.cat; renderBrowse(); });
+
+/* setup */
+fillPlaces($("#b-area"), {regions:true, areas:true});
+fillPlaces($("#d-region"), {anywhere:true, regions:true});
+fillPlaces($("#p-area"), {regions:true, areas:true});
+fillPlaces($("#bar-area"), {anywhere:true, regions:true, areas:true});
+fillPlaces($("#gv-area"), {anywhere:true, regions:true, areas:true});
+const AREA_REGION = {}; Object.entries(AREAS).forEach(([r,s]) => s.forEach(a => AREA_REGION[a] = r));
+$("#gv-date").min = SEASON_START; $("#gv-date").max = SEASON_END; $("#p-area").insertAdjacentHTML("afterbegin", '<option value="">Choose a place</option>');
+const CATS = __CATS__;  /* every section on the sheet, in sheet order */
+const DT_ORDER = ["North: Edmonds and up the coast","East: Snoqualmie, Leavenworth and the mountains","South: Tacoma and the South Sound","Islands","Kitsap and the Olympic Peninsula","Oregon","Vancouver, BC"];
+const EMPTY_NOTE = {
+  "Hanukkah": "Hanukkah 2026 starts the evening of Friday, Dec 4 and runs through Dec 12. Menorah lightings, Chanukah villages and parties usually post their dates in late November, and they will show up here as soon as they do.",
+  "Kwanzaa": "Kwanzaa runs Dec 26 to Jan 1. Celebrations usually announce in December, and they will show up here as soon as they do.",
+  "Dogs": "Dog-friendly Santa photos and holiday meetups usually post dates in mid-November. They will show up here as soon as they do."
+};
+
+const t0 = todayIso() < "2026-11-28" ? "2026-11-28" : todayIso();
+const start = clampSeason(nextDow(t0, 6));
+["#b-date","#d-date"].forEach(s => { const el = $(s); el.min = SEASON_START; el.max = SEASON_END; el.value = start; });
+$("#b-area").value = "r:Central Seattle";
+$("#p-area").value = "";
+quick($("#b-quick"), $("#b-date"), renderBuild);
+quick($("#d-quick"), $("#d-date"), renderAnyday);
+(function(){
+  const t = todayIso(), el = $("#m-date"); el.value = t;
+  const opts = [["Today", t], ["Tomorrow", (() => { const x = parseIso(t); x.setDate(x.getDate()+1); return iso(x); })()], ["Thanksgiving","2026-11-26"], ["Christmas Day","2026-12-25"]].filter(o => o[1] >= t || o[0] === "Today");
+  $("#m-quick").innerHTML = opts.map(([l,v]) => '<button type="button" class="chipbtn" data-v="'+v+'">'+l+'</button>').join("");
+  $("#m-quick").addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if(!b) return; el.value = b.dataset.v; renderMeals(); });
+})();
+["#b-date","#b-area"].forEach(s => $(s).addEventListener("change", renderBuild));
+["#d-date","#d-region"].forEach(s => $(s).addEventListener("change", renderAnyday));
+$("#p-area").addEventListener("change", renderPlace);
+["#s-q","#s-tag"].forEach(s => $(s).addEventListener("input", renderBrowse));
+$("#updated").textContent = "Last updated " + UPDATED + ". " + EV.length + " confirmed listings.";
+
+/* hero pills */
+(function(){
+  const t = todayIso(), s = clampSeason(t);
+  const onToday = EV.filter(e => onDate(e, s)).length;
+  const total = EV.length;
+  const lightsN = EV.filter(e => e.c === "Lights").length;
+  $("#tonight").innerHTML =
+    '<span class="pill">Sunset tonight <b>'+sunset(t)+'</b></span>' +
+    '<a class="pill" href="#browse" data-cat-jump="">'+'<b>'+total+'</b> confirmed things to do</a>' +
+    '<a class="pill" href="#browse" data-cat-jump="Lights"><b>'+lightsN+'</b> light displays</a>' +
+    (onToday ? '<a class="pill" href="#anyday" data-day-jump="'+s+'"><b>'+onToday+'</b> on today</a>' : '');
+})();
+
+document.addEventListener("click", ev => {
+  const c = ev.target.closest("[data-cat-jump]"); if(c){ sCat = c.dataset.catJump; $("#s-q").value = ""; $("#s-tag").value = ""; if(location.hash === "#browse") renderBrowse(); }
+  const d = ev.target.closest("[data-day-jump]"); if(d){ $("#d-date").value = d.dataset.dayJump; $("#d-region").value = ""; if(location.hash === "#anyday") renderAnyday(); }
+  if(c || d) setTimeout(() => document.querySelector("nav.tabs").scrollIntoView({behavior:"smooth"}), 30);
+});
+/* routing */
+const VIEWS = ["browse","build","anyday","place","bars","give","meals"];
+function route(){
+  const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "browse";
+  VIEWS.forEach(x => { $("#v-"+x).classList.toggle("on", x === v); const a = document.querySelector('nav.tabs a[data-v="'+x+'"]'); if(x === v) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
+  ({build:renderBuild, anyday:renderAnyday, place:renderPlace, browse:renderBrowse, bars:renderBars, give:renderGive, meals:renderMeals})[v]();
+}
+window.addEventListener("hashchange", route);
+route(); renderDay(); refreshButtons();
+
+/* snowfall in the header, gentle; off for reduced motion */
+(function(){
+  const c = $("#snow"), x = c.getContext("2d");
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let w, h, flakes = [];
+  function size(){ const r = c.getBoundingClientRect(); w = c.width = r.width * devicePixelRatio; h = c.height = r.height * devicePixelRatio;
+    flakes = Array.from({length: Math.round(r.width/9)}, () => ({x:Math.random()*w, y:Math.random()*h, r:(Math.random()*1.8+.6)*devicePixelRatio, s:Math.random()*.5+.25, d:Math.random()*Math.PI*2})); draw(); }
+  function draw(){ x.clearRect(0,0,w,h); x.fillStyle = "rgba(238,243,249,.75)"; flakes.forEach(f => { x.beginPath(); x.arc(f.x,f.y,f.r,0,7); x.fill(); }); }
+  function step(){ flakes.forEach(f => { f.y += f.s*devicePixelRatio; f.d += .01; f.x += Math.sin(f.d)*.3*devicePixelRatio; if(f.y > h){ f.y = -4; f.x = Math.random()*w; } }); draw(); requestAnimationFrame(step); }
+  addEventListener("resize", size); size(); if(!still) requestAnimationFrame(step);
+})();
+})();
+</script>
+</body>
+</html>
