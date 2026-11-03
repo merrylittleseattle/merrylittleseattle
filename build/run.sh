@@ -5,7 +5,7 @@
 set -e
 cd "$(dirname "$0")"
 python3 make_raw.py "$1"
-python3 bars.py "$2"
+python3 bars.py "$2" "$1"
 python3 build_data.py
 python3 build.py
 cp index.html ../index.html
