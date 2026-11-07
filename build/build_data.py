@@ -2,12 +2,12 @@ import json,re
 o=json.load(open('raw.json'))
 DAYTRIP_SECS={'Edmonds','South','East','Bainbridge','Vashon','Whidbey','Orcas','Orcas Island','Camano','Camano Island','San Juan Island','Kitsap & Peninsula','Oregon','Vancouver','Islands (And West)'}
 REGION={
- 'North Seattle':['Green Lake','Ballard','Fremont','Phinney Ridge','Magnuson Park','Laurelhurst','Northgate','UW / Arboretum','University District','Wallingford','Magnolia','Queen Anne','Lake Union','Carkeek Park','Matthews Beach','Sand Point','Ravenna'],
- 'Central Seattle':['Downtown','Seattle Center','Capitol Hill','First Hill','Waterfront','Belltown','Central District','International District','Madison Park','Madrona','Downtown / Seattle Center','Seattle','Pioneer Square'],
- 'South & West Seattle':['West Seattle','White Center','South Park','SoDo','Georgetown','Rainier Valley','Rainier Beach','Burien','Mount Baker','Seward Park','Columbia City','Tukwila'],
+ 'North Seattle':['Green Lake','Ballard','Fremont','Phinney Ridge','Magnuson Park','Laurelhurst','Northgate','UW / Arboretum','University District','Wallingford','Magnolia','Queen Anne','Lake Union','Carkeek Park','Matthews Beach','Sand Point','Ravenna','UW','Northeast Seattle'],
+ 'Central Seattle':['Downtown','Seattle Center','Capitol Hill','First Hill','Waterfront','Belltown','Central District','International District','Madison Park','Madrona','Downtown / Seattle Center','Seattle','Pioneer Square','South Lake Union','Uptown'],
+ 'South & West Seattle':['West Seattle','White Center','South Park','SoDo','Georgetown','Rainier Valley','Rainier Beach','Burien','Mount Baker','Seward Park','Columbia City','Tukwila','Beacon Hill'],
  'North of Seattle':['Edmonds','Shoreline','Lynnwood','Bothell','Everett','Tulalip','Woodinville','Mukilteo','Kenmore'],
  'Eastside':['Bellevue','Redmond','Kirkland','Issaquah','Sammamish','Carnation','Snoqualmie','Renton','Medina','Yarrow Point','Mercer Island'],
- 'South Sound':['Tacoma','Federal Way','Puyallup','Spanaway Park','Chehalis','Elbe','Des Moines','Olympia','Lacey'],
+ 'South Sound':['Tacoma','Federal Way','Puyallup','Spanaway Park','Chehalis','Elbe','Des Moines','Olympia','Lacey','Kent'],
  'Mountains':['Snoqualmie Pass','Leavenworth','Mt. Rainier','Mt Hood'],
  'Islands & Peninsula':['Bainbridge Island','Vashon Island','San Juan Island','Poulsbo','Port Townsend','Bremerton','Camano Island'],
  'Farther Afield':['Oregon','Vancouver'],
