@@ -349,22 +349,72 @@ function sunset(isoDate){
   return ((h % 12) || 12) + ":" + pad(mm) + (h < 12 ? " am" : " pm");
 }
 
+/* when a time cell lists different times per date ("Wed Dec 9 at 7:30pm; Sat Dec 12 at 2pm and 8pm"), keep the part for day d */
+const MON = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+function dayPart(t, d){
+  if(!t || !d) return t || "";
+  const parts = t.split(/;|\n/).map(x => x.trim()).filter(Boolean);
+  if(parts.length < 2) return t;
+  const mo = +d.slice(5,7), dy = +d.slice(8,10);
+  const re = new RegExp("\\b(" + MON[mo-1] + "[a-z]*\\.?\\s*(\\d{1,2}\\s*(,|&|and)\\s*)*" + dy + "(?!\\d)|0?" + mo + "/0?" + dy + "(?!\\d))", "i");
+  const hit = parts.find(x => re.test(x)); if(hit) return hit;
+  const rng = new RegExp("\\b" + MON[mo-1] + "[a-z]*\\.?\\s*(\\d{1,2})\\s*(?:to|-|–)\\s*(\\d{1,2})(?!\\s*(?::|am|pm))", "i");
+  const inRange = parts.find(x => { const r = rng.exec(x); return r && dy >= +r[1] && dy <= +r[2]; }); if(inRange) return inRange;
+  /* then by weekday: "Sat 12pm to 6pm; Sun 11am to 4pm", "Weekdays ...; weekends ..." */
+  const wd = new Date(Date.UTC(+d.slice(0,4), mo-1, dy)).getUTCDay();
+  const names = ["sun","mon","tue","wed","thu","fri","sat"][wd];
+  const wkend = wd === 0 || wd === 6;
+  const byDay = parts.find(x => new RegExp("^\\W*" + names + "[a-z]*\\b(?!\\s*[-–]|\\s*to\\b)", "i").test(x))
+             || parts.find(x => (wkend ? /^\W*weekends?\b/i : /^\W*weekdays?\b/i).test(x));
+  return byDay || t;
+}
+/* drop dates and years so "Dec 9 at 7:30pm" reads as 7:30pm, not 9am */
+function stripDates(s){
+  return s.replace(/\bnoon\b/g, "12pm").replace(/\bmidnight\b/g, "12am")
+          .replace(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*\d{1,2}(st|nd|rd|th)?\b((\s*(,|&|and|-|to)\s*)\d{1,2}(st|nd|rd|th)?\b(?!\s*(:|am|pm|a\.m|p\.m|to\b|–|-)))*/g, " ")
+          .replace(/\b\d{1,2}\/\d{1,2}(\/\d{2,4})?\b/g, " ")
+          .replace(/\b(19|20)\d\d\b/g, " ")
+          .replace(/\b\d+(\.\d+)?\s*k\b/g, " ")                       /* 5K, 12K race names */
+          .replace(/\b\d+[- ]?(hours?|hrs?|minutes?|mins?)\b/g, " ")    /* 2-hour tours */
+          .replace(/\$\s*\d+(\.\d+)?|\bages?\s*\d+\+?|\b\d+\+/g, " ")   /* prices, ages */
+          .replace(/\b\d+(st|nd|rd|th)\b/g, " ");
+}
 /* first clock time in a free-text time string, in minutes; 9999 if none */
 function timeKey(t){
   if(!t) return 9999;
-  const s = t.toLowerCase();
-  if(/^\s*(morning)/.test(s)) return 540;
-  if(/^\s*(afternoon|daytime)/.test(s)) return 780;
-  if(/^\s*(evening|after dark|dusk|nightly)/.test(s)) return 1080;
-  let m = s.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?/);
+  const s = stripDates(t.toLowerCase());
+  const hasNum = /\d/.test(s);
+  if(/^\s*(morning)/.test(s) && !hasNum) return 540;
+  if(/^\s*(afternoon|daytime)/.test(s) && !hasNum) return 780;
+  if(/^\s*(evening|after dark|dusk)/.test(s) || (/^\s*nightly/.test(s) && !hasNum)) return 1080;
+  const re = /(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?/g;
+  const m = re.exec(s);
   if(!m) return 9999;
-  let h = +m[1], mi = +(m[2]||0); const ap = m[3] || (s.match(/\b(am|pm)\b/)||[])[1];
+  let h = +m[1], mi = +(m[2]||0); let ap = m[3];
   if(h > 23) return 9999;
+  if(!ap){
+    /* "10:00 - 5:00 PM": borrow the next am/pm, but a start bigger than the end is morning */
+    const n = /(\d{1,2})(?::\d{2})?\s*(am|pm)/.exec(s.slice(re.lastIndex));
+    if(n){ ap = n[2]; const end = +n[1]; if(ap === "pm" && h !== 12 && h > end && end < 12) ap = "am"; }
+  }
   if(ap){ if(ap.startsWith("p") && h < 12) h += 12; if(ap.startsWith("a") && h === 12) h = 0; }
   else if(h >= 1 && h <= 7) h += 12;
   return h*60 + mi;
 }
-function clock(t){ if(!/\d/.test(t||"")) return ""; const k = timeKey(t); if(k === 9999) return ""; const h = Math.floor(k/60), m = k%60; return ((h%12)||12)+":"+pad(m)+(h<12?" am":" pm"); }
+function fmtMin(k){ const h = Math.floor(k/60), m = k%60; return ((h%12)||12)+":"+pad(m)+(h<12?" am":" pm"); }
+function clock(t, d){
+  t = dayPart(t, d);
+  if(!/\d/.test(t||"")) return "";
+  const k = timeKey(t); if(k === 9999) return "";
+  /* "2pm and 8pm" style choices: show each */
+  const s = stripDates(t.toLowerCase());
+  if(/(am|pm)(\s*\([^)]*\))?\s*(,|&|and|or)\s*\d/.test(s)){
+    const all = [...s.matchAll(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/g)].filter(x => !/(to|–|-)\s*$/.test(s.slice(0, x.index))).map(x => { let h = +x[1]; if(x[3]==="pm" && h<12) h+=12; if(x[3]==="am" && h===12) h=0; return h*60 + +(x[2]||0); });
+    const uniq = [...new Set(all)];
+    if(uniq.length > 1 && uniq.length < 4) return uniq.map(fmtMin).join(" or ");
+  }
+  return fmtMin(k);
+}
 
 /* ---------- places ---------- */
 const AREAS = {};
@@ -470,7 +520,7 @@ function refreshButtons(){
 function sortedItems(d){ return sortList(plans[d]||[], d); }
 function sortList(list, d){
   return list.map(k => ({k, it:itemOf(k)})).filter(x => x.it)
-    .sort((a,b) => timeKey(a.it.tm || (a.it.give ? giveHours(a.it.give, d) : "")) - timeKey(b.it.tm || (b.it.give ? giveHours(b.it.give, d) : "")));
+    .sort((a,b) => timeKey(a.it.tm ? dayPart(a.it.tm, d) : (a.it.give ? giveHours(a.it.give, d) : "")) - timeKey(b.it.tm ? dayPart(b.it.tm, d) : (b.it.give ? giveHours(b.it.give, d) : "")));
 }
 function renderDay(){
   const ds = Object.keys(plans).sort();
@@ -483,7 +533,7 @@ function renderDay(){
   const d = activeDay;
   $("#dayDate").textContent = fmtLong(d) + ". Sunset " + sunset(d) + "." + (HOLIDAY_NOTE[d] ? " " + HOLIDAY_NOTE[d] + ": hours may differ, so check ahead." : "");
   $("#dayList").innerHTML = sortedItems(d).map(({k,it}) => {
-    const t = it.give ? (giveHours(it.give, d) || "Closed this day") : (clock(it.tm) || "Anytime");
+    const t = it.give ? (giveHours(it.give, d) || "Closed this day") : (clock(it.tm, d) || "Anytime");
     return '<div class="dayitem"><div class="t">'+esc(t)+'</div><div><strong>'+esc(it.name)+'</strong><div class="where">'+esc(it.loc)+'</div></div><button class="x" type="button" data-rm="'+esc(k)+'" aria-label="Remove '+esc(it.name)+'">Remove</button></div>';
   }).join("");
   $("#dayText").value = dayText(d);
@@ -492,7 +542,7 @@ function dayText(d){
   const items = sortedItems(d); if(!items.length) return "";
   let s = "My Merry Little Seattle day, " + fmtLong(d) + "\nSunset " + sunset(d) + "\n\n";
   items.forEach(({it}) => {
-    const t = it.give ? (giveHours(it.give, d) || "") : (clock(it.tm) || "Anytime");
+    const t = it.give ? (giveHours(it.give, d) || "") : (clock(it.tm, d) || "Anytime");
     s += (t ? t + "  " : "") + it.name + "\n";
     if(it.loc) s += "    " + it.loc + "\n";
     if(it.u) s += "    " + it.u + "\n";
@@ -529,7 +579,7 @@ $("#shareDay").addEventListener("click", async () => {
 let shared = null;
 function itemRows(list, d, removable){
   return sortList(list, d).map(({k,it}) => {
-    const t = it.give ? (giveHours(it.give, d) || "Closed this day") : (clock(it.tm) || "Anytime");
+    const t = it.give ? (giveHours(it.give, d) || "Closed this day") : (clock(it.tm, d) || "Anytime");
     return '<div class="dayitem"><div class="t">'+esc(t)+'</div><div><strong>'+esc(it.name)+'</strong><div class="where">'+esc(it.loc)+'</div></div>' +
       (removable ? '<button class="x" type="button" data-rm="'+esc(k)+'" aria-label="Remove '+esc(it.name)+'">Remove</button>' : '') + '</div>';
   }).join("");
