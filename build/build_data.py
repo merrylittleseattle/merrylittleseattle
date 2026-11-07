@@ -9,7 +9,7 @@ REGION={
  'Eastside':['Bellevue','Redmond','Kirkland','Issaquah','Sammamish','Carnation','Snoqualmie','Renton','Medina','Yarrow Point','Mercer Island'],
  'South Sound':['Tacoma','Federal Way','Puyallup','Spanaway Park','Chehalis','Elbe','Des Moines'],
  'Mountains':['Snoqualmie Pass','Leavenworth','Mt. Rainier','Mt Hood'],
- 'Islands & Peninsula':['Bainbridge Island','Vashon Island','San Juan Island','Poulsbo','Port Townsend','Bremerton'],
+ 'Islands & Peninsula':['Bainbridge Island','Vashon Island','San Juan Island','Poulsbo','Port Townsend','Bremerton','Camano Island'],
  'Farther Afield':['Oregon','Vancouver'],
 }
 A2R={a:r for r,l in REGION.items() for a in l}
