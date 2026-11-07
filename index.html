@@ -133,7 +133,9 @@ a.pill:hover{border-color:var(--glow)}
 .primary{background:var(--glow);color:var(--night);border:0;border-radius:10px;padding:10px 16px;font-weight:700}
 .ghost{background:transparent;color:var(--snow);border:1px solid var(--ridge);border-radius:10px;padding:10px 16px}
 #copied{color:var(--glow);font-size:14px;align-self:center}
-textarea{width:100%;min-height:140px;font:13px/1.5 ui-monospace,Menlo,monospace;background:var(--night);color:var(--snow);border:1px solid var(--ridge);border-radius:10px;padding:10px;margin-top:10px}
+textarea{width:100%;min-height:140px;font:15px/1.6 var(--body);background:var(--dusk);color:var(--snow);border:1px solid var(--ridge);border-radius:14px;padding:14px 16px;margin-top:12px;resize:vertical}
+textarea:focus{outline:2px solid var(--glow);outline-offset:2px}
+#dayText[hidden]{display:none}
 
 /* plan tabs, chooser, give */
 .plantabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}
@@ -289,7 +291,7 @@ footer p{max-width:64ch;margin:0 0 8px}
       <button class="ghost" type="button" id="clearDay">Delete this day</button>
       <span id="copied" role="status"></span>
     </div>
-    <textarea id="dayText" readonly aria-label="Your day as text"></textarea>
+    <textarea id="dayText" readonly hidden aria-label="Your day as text"></textarea>
   </div>
 </section>
 
@@ -558,7 +560,7 @@ $("#dayList").addEventListener("click", ev => { const b = ev.target.closest("[da
 async function copyText(t, okMsg){
   if(!t) return;
   try { await navigator.clipboard.writeText(t); $("#copied").textContent = okMsg; }
-  catch(e) { $("#dayText").value = t; $("#dayText").select(); $("#copied").textContent = "Selected. Press copy on your keyboard."; }
+  catch(e) { $("#dayText").hidden = false; $("#dayText").value = t; $("#dayText").select(); $("#copied").textContent = "Selected. Press copy on your keyboard."; }
 }
 $("#copyDay").addEventListener("click", () => copyText($("#dayText").value, "Copied this day. Paste it into a text."));
 $("#copyAll").addEventListener("click", () => copyText(allText(), "Copied every day."));
