@@ -69,6 +69,7 @@ button{font:inherit;cursor:pointer}
 .chipbtn{background:transparent;color:var(--snow);border:1px solid var(--ridge);border-radius:999px;padding:7px 13px;font-size:14px}
 .chipbtn:hover,.chipbtn[aria-pressed="true"]{border-color:var(--glow);color:var(--glow)}
 .sun{font-size:14px;color:var(--frost);margin:14px 0 0}
+#m-out > p.note:first-child{margin-top:22px}
 .sun b{color:var(--glow);font-weight:600;font-variant-numeric:tabular-nums}
 
 /* Cards */
@@ -259,7 +260,7 @@ footer p{max-width:64ch;margin:0 0 8px}
   <div class="wrap">
     <p>Listings are checked against 2026 sources and updated through the season. Times and tickets change, so confirm on the event page before you head out.</p>
     <p>Holiday pop-up bars return most years; check that each one is open for 2026 before you go.</p>
-    <p class="contact"><a class="suggest" href="https://docs.google.com/forms/d/e/1FAIpQLSegMryN9rgqpXSHy02fnLd15AZGxu84S4fhTqB3apc_mszqzA/viewform" target="_blank" rel="noopener">Suggest an event</a> <a href="https://docs.google.com/forms/d/e/1FAIpQLSegMryN9rgqpXSHy02fnLd15AZGxu84S4fhTqB3apc_mszqzA/viewform" target="_blank" rel="noopener">Fix something or say hi</a></p>
+    <p class="contact"><a class="suggest" href="https://docs.google.com/forms/d/e/1FAIpQLSegMryN9rgqpXSHy02fnLd15AZGxu84S4fhTqB3apc_mszqzA/viewform" target="_blank" rel="noopener">Suggest an event, fix something or say hi</a></p>
     <p>Suggestions are read by a person and added once we can confirm them.</p>
     <p id="updated"></p>
   </div>
@@ -873,7 +874,7 @@ $("#s-cats").addEventListener("click", ev => { const b = ev.target.closest("[dat
 
 /* setup */
 fillPlaces($("#b-area"), {regions:true, areas:true});
-fillPlaces($("#d-region"), {anywhere:true, regions:true});
+fillPlaces($("#d-region"), {anywhere:true, regions:true, areas:true});
 fillPlaces($("#p-area"), {regions:true, areas:true});
 fillPlaces($("#bar-area"), {anywhere:true, regions:true, areas:true});
 fillPlaces($("#gv-area"), {anywhere:true, regions:true, areas:true});
