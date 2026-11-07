@@ -104,6 +104,8 @@ button{font:inherit;cursor:pointer}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
 .chips .chipbtn .n{opacity:.7;margin-left:4px;font-variant-numeric:tabular-nums}
 .card.meal .type{color:#a8dcbc}
+.card.meal.holiday{border-left-color:var(--glow)}
+.card.meal.holiday .type{color:var(--glow)}
 .week{font-size:14px;color:var(--snow);margin:0;padding:0;list-style:none;display:grid;gap:2px}
 .week b{display:inline-block;min-width:3em;color:var(--frost);font-weight:600}
 a.pill{text-decoration:none;color:var(--snow)}
@@ -249,7 +251,7 @@ footer p{max-width:64ch;margin:0 0 8px}
     <p class="intro">Free hot meals around Seattle. Most are open to anyone with no ID or sign-up; the few that serve a specific group say so. Pick a day to see who is serving. Hours come from each program's latest listing and can change, especially around holidays, so call ahead when you can.</p>
     <div class="controls">
       <div class="field"><label for="m-date">Day</label><input type="date" id="m-date"></div>
-      <div class="field"><label for="m-region">Where</label><select id="m-region"><option value="">All of Seattle</option><option>North Seattle</option><option>Central Seattle</option></select></div>
+      <div class="field"><label for="m-region">Where</label><select id="m-region"></select></div>
       <div class="quick" id="m-quick" aria-label="Quick days"></div>
     </div>
     <div id="m-out"></div>
@@ -308,6 +310,7 @@ footer p{max-width:64ch;margin:0 0 8px}
 <script type="application/json" id="data-give">__GIVE__</script>
 <script type="application/json" id="data-drives">__DRIVES__</script>
 <script type="application/json" id="data-meals">__MEALS__</script>
+<script type="application/json" id="data-hmeals">__HMEALS__</script>
 <script type="application/json" id="data-events">__EVENTS__</script>
 <script type="application/json" id="data-bars">__BARS__</script>
 <script>
@@ -317,6 +320,7 @@ const BARS = JSON.parse(document.getElementById('data-bars').textContent);
 const GIVE = JSON.parse(document.getElementById('data-give').textContent);
 const DRIVES = JSON.parse(document.getElementById('data-drives').textContent);
 const MEALS = JSON.parse(document.getElementById('data-meals').textContent);
+const HMEALS = JSON.parse(document.getElementById('data-hmeals').textContent);
 const UPDATED = "__UPDATED__";
 const SEASON_START = "2026-11-01", SEASON_END = "2027-01-10";
 const REGION_ORDER = ["North Seattle","Central Seattle","South & West Seattle","North of Seattle","Eastside","South Sound","Mountains","Islands & Peninsula","Farther Afield"];
@@ -743,6 +747,13 @@ function mealCard(m, d){
     '<div class="vibe">'+esc(m.v)+'</div>' +
     '<div class="actions"><a href="'+esc(m.u)+'" target="_blank" rel="noopener">More info</a>'+(m.phone ? '<a href="tel:'+m.phone.replace(/\D/g,"")+'">'+esc(m.phone)+'</a>' : "")+'</div></article>';
 }
+function hmealCard(m){
+  return '<article class="card meal holiday"><span class="type">Free holiday meal · '+esc(m.who)+'</span><h4>'+esc(m.n)+'</h4>' +
+    '<div class="when"><b>'+esc(fmtShort(m.d))+', '+esc(m.tm)+'</b></div>' +
+    '<div class="where">'+esc(m.loc)+' · '+esc(m.a)+'</div>' +
+    '<div class="vibe">'+esc(m.v)+'</div>' +
+    '<div class="actions"><a href="'+esc(m.u)+'" target="_blank" rel="noopener">More info</a>'+(m.phone ? '<a href="tel:'+m.phone.replace(/\D/g,"")+'">'+esc(m.phone)+'</a>' : "")+'</div></article>';
+}
 function renderMeals(){
   const d = $("#m-date").value, r = $("#m-region").value;
   if(!d) return;
@@ -750,12 +761,21 @@ function renderMeals(){
   const pool = MEALS.filter(m => !r || m.r === r);
   const on = pool.filter(m => mealHours(m, d)).sort((a,b) => a.t[i] - b.t[i] || a.n.localeCompare(b.n));
   let h = HOLIDAY_NOTE[d] ? '<p class="note">'+HOLIDAY_NOTE[d]+': many programs change hours, close, or serve a special holiday meal. Please call first.</p>' : "";
-  h += '<h3>Serving '+esc(fmtShort(d))+' <span class="n">'+on.length+'</span></h3>' +
-    (on.length ? '<div class="list">'+on.map(m => mealCard(m, d)).join("")+'</div>' : '<p class="empty">Nothing on our list for that day here. Try All of Seattle, or call 211 for more options.</p>');
+  const hpool = HMEALS.filter(m => !r || m.r === r);
+  const hon = hpool.filter(m => m.d === d).sort((a,b) => timeKey(a.tm) - timeKey(b.tm));
+  const near = hpool.filter(m => m.d !== d && Math.abs(parseIso(m.d) - parseIso(d)) <= 5*864e5).sort((a,b) => a.d.localeCompare(b.d) || timeKey(a.tm) - timeKey(b.tm));
+  if(hon.length) h += '<h3>Holiday meals '+esc(fmtShort(d))+' <span class="n">'+hon.length+'</span></h3><div class="list">'+hon.map(hmealCard).join("")+'</div>';
+  if(near.length) h += '<h3>More holiday meals this week <span class="n">'+near.length+'</span></h3><div class="list">'+near.map(hmealCard).join("")+'</div>';
+  h += '<h3>'+(hon.length ? "Regular meals serving " : "Serving ")+esc(fmtShort(d))+' <span class="n">'+on.length+'</span></h3>' +
+    (on.length ? '<div class="list">'+on.map(m => mealCard(m, d)).join("")+'</div>' : '<p class="empty">Nothing on our list for that day here. Try Anywhere, or call 211 for more options.</p>');
   h += '<h3>Every place on the list, all week <span class="n">'+pool.length+'</span></h3><div class="list">'+pool.map(m => mealCard(m, "")).join("")+'</div>';
   h += '<div class="foot-notes"><p class="note">For more free food, shelter or other help any time, call or text <a href="tel:211">211</a> (Washington 211).</p><p class="note">Want to help serve? Many of these programs need volunteers. <a href="#give" data-volunteer>See volunteer shifts on Give back</a>.</p></div>';
   $("#m-out").innerHTML = h;
 }
+(function(){
+  const regs = new Set([...MEALS, ...HMEALS].map(m => m.r));
+  $("#m-region").innerHTML = '<option value="">Anywhere</option>' + REGION_ORDER.filter(r => regs.has(r)).map(r => '<option>'+esc(r)+'</option>').join("");
+})();
 $("#m-region").addEventListener("change", renderMeals);
 $("#m-date").addEventListener("change", renderMeals);
 
