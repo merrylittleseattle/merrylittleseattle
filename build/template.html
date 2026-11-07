@@ -122,6 +122,8 @@ a.pill:hover{border-color:var(--glow)}
 #mydayBtn{position:fixed;right:18px;bottom:18px;z-index:10;background:var(--glow);color:var(--night);border:0;border-radius:999px;padding:13px 20px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.45)}
 #myday{position:fixed;inset:auto 0 0 0;z-index:20;max-height:80%;overflow:auto;background:var(--dusk);border-top:2px solid var(--glow);border-radius:18px 18px 0 0;padding:20px;transform:translateY(105%);transition:transform .25s ease}
 #myday.open{transform:none}
+#myday .shared{border:1px solid var(--glow);border-radius:12px;padding:14px 16px;margin:6px 0 18px}
+#myday .shared p{margin:0 0 6px}
 #myday .wrap{padding:0}
 #myday h2{font-size:28px}
 .dayitem{display:grid;grid-template-columns:84px 1fr auto;gap:12px;padding:12px 0;border-bottom:1px solid var(--ridge);align-items:start}
@@ -268,11 +270,21 @@ footer p{max-width:64ch;margin:0 0 8px}
       <h2 id="h-myday">My days</h2>
       <button class="ghost" type="button" id="closeDay">Close</button>
     </div>
+    <div id="sharedBox" class="shared" hidden>
+      <p><strong id="sharedTitle"></strong></p>
+      <p class="note" id="sharedDate"></p>
+      <div id="sharedList"></div>
+      <div class="row">
+        <button class="primary" type="button" id="sharedSave">Add to my days</button>
+        <button class="ghost" type="button" id="sharedSkip">No thanks</button>
+      </div>
+    </div>
     <div class="plantabs" id="planTabs" aria-label="Your planned days"></div>
     <p class="note" id="dayDate"></p>
     <div id="dayList"></div>
     <div class="row">
-      <button class="primary" type="button" id="copyDay">Copy my day</button>
+      <button class="primary" type="button" id="shareDay">Share this day</button>
+      <button class="ghost" type="button" id="copyDay">Copy my day</button>
       <button class="ghost" type="button" id="copyAll">Copy all days</button>
       <button class="ghost" type="button" id="clearDay">Delete this day</button>
       <span id="copied" role="status"></span>
@@ -405,10 +417,29 @@ try {
 function savePlans(){ try { localStorage.setItem("merry-plans", JSON.stringify({plans, active: activeDay})); } catch(e) {} }
 const byId = Object.fromEntries(EV.map(e => [e.id, e]));
 const giveById = Object.fromEntries(GIVE.map(g => [g.id, g]));
+/* Events and bars are saved by name, so saved days survive the nightly rebuild (row numbers shift, names do not). */
+const evByName = Object.fromEntries(EV.map(e => [e.n, e]));
+const barByName = Object.fromEntries(BARS.map(b => [b.n, b]));
+function splitKey(key){ const i = String(key).indexOf(":"); return i < 0 ? ["", ""] : [key.slice(0, i), key.slice(i + 1)]; }
+/* one-time upgrade of days saved with the old number-based keys */
+(function(){
+  let changed = false;
+  Object.keys(plans).forEach(d => {
+    plans[d] = (plans[d]||[]).map(key => {
+      const [k, v] = splitKey(key);
+      if(!/^\d+$/.test(v) || (k !== "e" && k !== "b")) return key;
+      changed = true;
+      const x = k === "e" ? byId[+v] : BARS[+v];
+      return x ? k + ":" + x.n : null;
+    }).filter(Boolean);
+    if(!plans[d].length) delete plans[d];
+  });
+  if(changed) savePlans();
+})();
 function itemOf(key){
-  const [k, v] = key.split(":"); const i = +v;
-  if(k === "e" && byId[i]) { const e = byId[i]; return {name:e.n, tm:e.tm, loc:e.loc||e.a, u:e.u}; }
-  if(k === "b" && BARS[i]) { const b = BARS[i]; return {name:b.n + " (holiday pop-up bar)", tm:b.tm || "evening", loc:b.loc, u:""}; }
+  const [k, v] = splitKey(key); const i = +v;
+  if(k === "e" && evByName[v]) { const e = evByName[v]; return {name:e.n, tm:e.tm, loc:e.loc||e.a, u:e.u}; }
+  if(k === "b" && barByName[v]) { const b = barByName[v]; return {name:b.n + " (holiday pop-up bar)", tm:b.tm || "evening", loc:b.loc, u:""}; }
   if(k === "d") { const x = DRIVES.find(z => z.id === i); if(x) return {name:(x.k.includes("Time") ? "Volunteer: " : "Give: ") + x.n, tm:x.sch, loc:x.loc, u:x.u}; }
   if(k === "g" && giveById[i]) { const g = giveById[i]; return {name:"Give: " + g.n, tm:"", loc:g.loc, u:g.u, give:g}; }
   return null;
@@ -436,8 +467,9 @@ function refreshButtons(){
   const days = Object.keys(plans).length;
   $("#mydayBtn").textContent = "My days (" + days + ")";
 }
-function sortedItems(d){
-  return (plans[d]||[]).map(k => ({k, it:itemOf(k)})).filter(x => x.it)
+function sortedItems(d){ return sortList(plans[d]||[], d); }
+function sortList(list, d){
+  return list.map(k => ({k, it:itemOf(k)})).filter(x => x.it)
     .sort((a,b) => timeKey(a.it.tm || (a.it.give ? giveHours(a.it.give, d) : "")) - timeKey(b.it.tm || (b.it.give ? giveHours(b.it.give, d) : "")));
 }
 function renderDay(){
@@ -452,7 +484,7 @@ function renderDay(){
   $("#dayDate").textContent = fmtLong(d) + ". Sunset " + sunset(d) + "." + (HOLIDAY_NOTE[d] ? " " + HOLIDAY_NOTE[d] + ": hours may differ, so check ahead." : "");
   $("#dayList").innerHTML = sortedItems(d).map(({k,it}) => {
     const t = it.give ? (giveHours(it.give, d) || "Closed this day") : (clock(it.tm) || "Anytime");
-    return '<div class="dayitem"><div class="t">'+esc(t)+'</div><div><strong>'+esc(it.name)+'</strong><div class="where">'+esc(it.loc)+'</div></div><button class="x" type="button" data-rm="'+k+'" aria-label="Remove '+esc(it.name)+'">Remove</button></div>';
+    return '<div class="dayitem"><div class="t">'+esc(t)+'</div><div><strong>'+esc(it.name)+'</strong><div class="where">'+esc(it.loc)+'</div></div><button class="x" type="button" data-rm="'+esc(k)+'" aria-label="Remove '+esc(it.name)+'">Remove</button></div>';
   }).join("");
   $("#dayText").value = dayText(d);
 }
@@ -481,6 +513,54 @@ async function copyText(t, okMsg){
 $("#copyDay").addEventListener("click", () => copyText($("#dayText").value, "Copied this day. Paste it into a text."));
 $("#copyAll").addEventListener("click", () => copyText(allText(), "Copied every day."));
 
+/* ---------- Share a day by link ---------- */
+function b64e(t){ return btoa(String.fromCharCode(...new TextEncoder().encode(t))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
+function b64d(t){ t = t.replace(/-/g,"+").replace(/_/g,"/"); return new TextDecoder().decode(Uint8Array.from(atob(t), c => c.charCodeAt(0))); }
+function shareLink(d){ return location.origin + location.pathname + "?day=" + b64e(JSON.stringify({d, k: plans[d]||[]})); }
+$("#shareDay").addEventListener("click", async () => {
+  const d = activeDay; if(!d || !(plans[d]||[]).length) return;
+  const url = shareLink(d), title = "My Merry Little Seattle day, " + fmtLong(d);
+  if(navigator.share) {
+    try { await navigator.share({title, text: title, url}); return; }
+    catch(e) { if(e && e.name === "AbortError") return; }
+  }
+  copyText(url, "Link copied. Send it to anyone and it opens this day.");
+});
+let shared = null;
+function itemRows(list, d, removable){
+  return sortList(list, d).map(({k,it}) => {
+    const t = it.give ? (giveHours(it.give, d) || "Closed this day") : (clock(it.tm) || "Anytime");
+    return '<div class="dayitem"><div class="t">'+esc(t)+'</div><div><strong>'+esc(it.name)+'</strong><div class="where">'+esc(it.loc)+'</div></div>' +
+      (removable ? '<button class="x" type="button" data-rm="'+esc(k)+'" aria-label="Remove '+esc(it.name)+'">Remove</button>' : '') + '</div>';
+  }).join("");
+}
+function clearShareUrl(){ try { history.replaceState(null, "", location.pathname + location.hash); } catch(e) {} }
+function closeShared(){ shared = null; $("#sharedBox").hidden = true; clearShareUrl(); }
+(function(){
+  let p = null;
+  try { const raw = new URLSearchParams(location.search).get("day"); if(raw) p = JSON.parse(b64d(raw)); } catch(e) {}
+  if(!p) { if(new URLSearchParams(location.search).has("day")) clearShareUrl(); return; }
+  const d = typeof p.d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.d) ? p.d : "";
+  const all = Array.isArray(p.k) ? p.k.filter(x => typeof x === "string").slice(0, 60) : [];
+  const list = all.filter(k => itemOf(k));
+  if(!d || !list.length) { clearShareUrl(); return; }
+  shared = {d, list};
+  const gone = all.length - list.length;
+  $("#sharedTitle").textContent = "Someone shared a day with you: " + fmtLong(d);
+  $("#sharedDate").textContent = "Sunset " + sunset(d) + "." + (gone ? " " + gone + (gone === 1 ? " item is" : " items are") + " no longer listed, so " + (gone === 1 ? "it was" : "they were") + " left out." : "");
+  $("#sharedList").innerHTML = itemRows(list, d, false);
+  $("#sharedBox").hidden = false;
+  $("#myday").classList.add("open"); $("#mydayBtn").setAttribute("aria-expanded", true);
+})();
+$("#sharedSave").addEventListener("click", () => {
+  if(!shared) return;
+  const {d, list} = shared;
+  (plans[d] ||= []); list.forEach(k => { if(!plans[d].includes(k)) plans[d].push(k); });
+  activeDay = d; savePlans(); closeShared(); renderDay(); refreshButtons();
+  flash("Added to " + fmtShort(d));
+});
+$("#sharedSkip").addEventListener("click", closeShared);
+
 /* choose-a-day dialog, for things picked outside a dated view */
 let pendingKey = "";
 function openChooser(key, name, dates){
@@ -504,8 +584,8 @@ document.addEventListener("click", ev => {
   const key = b.dataset.key, d = b.dataset.date || "";
   if(inPlan(key, d)) { removeFrom(key, d || null); return; }
   if(d) { addTo(key, d); return; }
-  const [k, v] = key.split(":");
-  const dates = k === "e" ? (byId[+v]?.d || []) : [];
+  const [k, v] = splitKey(key);
+  const dates = k === "e" ? (evByName[v]?.d || []) : [];
   if(dates.length === 1) { addTo(key, dates[0]); return; }
   openChooser(key, itemOf(key)?.name || "", dates);
 });
@@ -516,7 +596,7 @@ function link(e){
   const q = encodeURIComponent(e.n + " " + (e.a||"Seattle") + " 2026");
   return '<a href="https://www.google.com/search?q='+q+'" target="_blank" rel="noopener">Look it up</a>';
 }
-function addBtn(key, d){ const on = inPlan(key, d||""); return '<button class="add" type="button" data-key="'+key+'" data-date="'+esc(d||"")+'" aria-pressed="'+on+'">'+(on?"In my day":"+ My day")+'</button>'; }
+function addBtn(key, d){ const on = inPlan(key, d||""); return '<button class="add" type="button" data-key="'+esc(key)+'" data-date="'+esc(d||"")+'" aria-pressed="'+on+'">'+(on?"In my day":"+ My day")+'</button>'; }
 function card(e, dateCtx){
   const tags = e.g.map(t => '<span class="tag '+({"Free":"free","Book ahead":"book","For adults":"adult","For kids":"kid","For dogs":"dog"}[t]||"")+'">'+esc(t)+'</span>').join("");
   return '<article class="card'+(e.p ? ' pick' : '')+'">' +
@@ -526,7 +606,7 @@ function card(e, dateCtx){
     '<div class="where">'+esc(e.loc ? e.loc + (e.loc.includes(e.a) ? "" : " · " + e.a) : e.a)+'</div>' +
     (e.v ? '<div class="vibe">'+esc(e.v)+'</div>' : '') +
     (tags ? '<div class="tags">'+tags+'</div>' : '') +
-    '<div class="actions">'+link(e)+addBtn("e:"+e.id, dateCtx)+'</div>' +
+    '<div class="actions">'+link(e)+addBtn("e:"+e.n, dateCtx)+'</div>' +
   '</article>';
 }
 function barCard(b, dateCtx){
@@ -535,7 +615,7 @@ function barCard(b, dateCtx){
     '<div class="when">'+(b.ok ? esc(b.w) : 'Usually '+esc(b.w)+' <span class="tbc">(2026 dates not announced yet)</span>')+(b.tm ? '<br>'+esc(b.tm) : '')+'</div>' +
     '<div class="where">'+esc(b.loc)+' · '+esc(b.a)+'</div>' +
     '<div class="vibe">'+esc(b.v)+'</div>' +
-    '<div class="actions"><a href="https://www.google.com/search?q='+q+'" target="_blank" rel="noopener">Check it is open</a>'+addBtn("b:"+i, dateCtx)+'</div></article>';
+    '<div class="actions"><a href="https://www.google.com/search?q='+q+'" target="_blank" rel="noopener">Check it is open</a>'+addBtn("b:"+b.n, dateCtx)+'</div></article>';
 }
 function giveCard(g, d){
   const h = d ? giveHours(g, d) : "";
