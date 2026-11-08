@@ -119,6 +119,7 @@ footer .contact{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
 footer .contact a{font-weight:600}
 footer a.suggest{border:1px solid var(--glow);border-radius:999px;padding:8px 16px;text-decoration:none}
 a.pill:hover{border-color:var(--glow)}
+.pill[hidden]{display:none}
 .note{font-size:13px;color:var(--frost);margin:-4px 0 12px}
 
 /* My Day */
@@ -935,10 +936,32 @@ $("#updated").textContent = "Last updated " + UPDATED + ". " + EV.length + " con
   const lightsN = EV.filter(e => e.c === "Lights").length;
   $("#tonight").innerHTML =
     '<span class="pill">Sunset tonight <b>'+sunset(t)+'</b></span>' +
+    '<a class="pill" id="santaPill" href="https://www.noradsanta.org" target="_blank" rel="noopener" hidden></a>' +
     '<a class="pill" href="#browse" data-cat-jump="">'+'<b>'+total+'</b> confirmed things to do</a>' +
     '<a class="pill" href="#browse" data-cat-jump="Lights"><b>'+lightsN+'</b> light displays</a>' +
     (onToday ? '<a class="pill" href="#anyday" data-day-jump="'+s+'"><b>'+onToday+'</b> on today</a>' : '');
+  santaTick(); setInterval(santaTick, 30000);
 })();
+/* NORAD Tracks Santa countdown. NORAD's live tracking opened at 4am MST (3am Pacific) on Dec 24, 2025. */
+function santaTick(){
+  const el = $("#santaPill"); if(!el) return;
+  const now = new Date(), y = now.getUTCFullYear();
+  const start = Date.UTC(y, 11, 24, 11, 0, 0);          /* Dec 24, 3am Pacific */
+  const xmasEnd = Date.UTC(y, 11, 26, 8, 0, 0);         /* end of Dec 25, Pacific */
+  const ms = start - now;
+  let h;
+  if(ms > 0){
+    const days = Math.floor(ms / 864e5), hrs = Math.floor(ms / 36e5) % 24, min = Math.floor(ms / 6e4) % 60;
+    const left = ms >= 2*864e5 ? days + " days" : (days ? days + "d " : "") + hrs + "h " + String(min).padStart(2,"0") + "m";
+    h = 'NORAD tracks Santa in <b>' + left + '</b>';
+  } else if(now < Date.UTC(y, 11, 25, 8, 0, 0)){
+    h = 'Santa is flying! <b>Track him live</b>';
+  } else if(now < xmasEnd){
+    h = '<b>Merry Christmas!</b>';
+  } else { el.hidden = true; return; }
+  el.innerHTML = h; el.hidden = false;
+  el.title = "Opens NORAD Tracks Santa (noradsanta.org)";
+}
 
 document.addEventListener("click", ev => {
   const c = ev.target.closest("[data-cat-jump]"); if(c){ sCat = c.dataset.catJump; $("#s-q").value = ""; $("#s-tag").value = ""; if(location.hash === "#browse") renderBrowse(); }
