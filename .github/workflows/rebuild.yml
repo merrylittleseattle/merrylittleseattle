@@ -28,16 +28,19 @@ jobs:
               sys.exit('Could not read the sheet: ' + str(d)[:200])
           json.dump(d['events'], open(sys.argv[1] + '/events.json', 'w'))
           json.dump(d['bars'], open(sys.argv[1] + '/bars.json', 'w'))
+          # Give Back, Holiday Drives and Meal Kitchens, once the Apps Script sends them
+          tabs = {k: d[k] for k in ('give', 'drives', 'meals') if k in d}
+          json.dump(tabs, open(sys.argv[1] + '/tabs.json', 'w'))
           EOF
 
       - name: Build the site
-        run: sh build/run.sh "$RUNNER_TEMP/events.json" "$RUNNER_TEMP/bars.json"
+        run: sh build/run.sh "$RUNNER_TEMP/events.json" "$RUNNER_TEMP/bars.json" "$RUNNER_TEMP/tabs.json"
 
       - name: Publish if anything changed
         run: |
           git config user.name merrylittleseattle
           git config user.email merrylittleseattle@users.noreply.github.com
-          git add index.html
+          git add index.html build/give.json build/drives.json build/meals.json build/hmeals.json
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -m "Rebuild from sheet $(date -u +%F)"
           git push
