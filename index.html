@@ -742,7 +742,7 @@ function mealCard(m, d){
   const h = d ? mealHours(m, d) : "";
   const runs = []; m.h.forEach((x,i) => { if(!x) return; const r = runs[runs.length-1]; if(r && r.x === x && r.e === i-1) r.e = i; else runs.push({x, s:i, e:i}); });
   const sched = '<ul class="week">' + runs.map(r => '<li><b>'+(r.s === r.e ? WEEK[r.s] : (r.s === 0 && r.e === 6 ? "Daily" : WEEK[r.s]+"-"+WEEK[r.e]))+'</b> '+esc(r.x)+(m.last ? " (last Sunday of the month)" : "")+'</li>').join("") + '</ul>';
-  return '<article class="card meal"><span class="type">Free · '+esc(m.who)+'</span><h4>'+esc(m.n)+'</h4>' +
+  return '<article class="card meal"><span class="type">'+(m.cost ? esc(m.cost) : 'Free')+' · '+esc(m.who)+'</span><h4>'+esc(m.n)+'</h4>' +
     (d ? '<div class="when"><b>'+esc(h)+'</b></div>' : sched) +
     '<div class="where">'+esc(m.loc)+' · '+esc(m.a)+'</div>' +
     '<div class="vibe">'+esc(m.v)+'</div>' +
