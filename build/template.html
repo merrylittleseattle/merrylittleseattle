@@ -34,6 +34,12 @@ a{color:var(--glow)}
 /* Hero */
 header{position:relative;overflow:hidden;background:linear-gradient(180deg,#0a1220 0%,var(--night) 100%);border-bottom:1px solid var(--ridge)}
 #snow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+/* Santa flyby, Dec 24 and 25 only */
+#santaFly{position:absolute;top:10px;left:0;width:110px;height:22px;pointer-events:none;z-index:2;transform:translateX(-140px);animation:santaFly 40s linear 3s infinite}
+#santaFly svg{display:block;animation:santaBob 1.2s ease-in-out infinite alternate}
+@keyframes santaFly{0%{transform:translateX(-140px)}28%{transform:translateX(calc(100vw + 40px))}100%{transform:translateX(calc(100vw + 40px))}}
+@keyframes santaBob{from{transform:translateY(0)}to{transform:translateY(5px)}}
+@media (prefers-reduced-motion:reduce){#santaFly{display:none}}
 .hero{position:relative;padding:44px 20px 30px}
 .hero h1{font-family:var(--display);font-weight:400;font-size:clamp(48px,9vw,92px);line-height:.95;margin:0;letter-spacing:-.01em;text-wrap:balance}
 .hero h1 span{color:var(--glow)}
@@ -1085,6 +1091,24 @@ document.addEventListener("click", ev => { if(ev.target.closest("#favSend")) cop
   } catch(e) { history.replaceState(null, "", "#favs"); }
 })();
 
+
+/* ---------- Santa flyby (Dec 24 and 25 in Seattle; add ?santa to the address to preview) ---------- */
+(function(){
+  const md = new Intl.DateTimeFormat("en-US", {timeZone:"America/Los_Angeles", month:"2-digit", day:"2-digit"}).format(new Date());
+  if(md !== "12/24" && md !== "12/25" && !/[?&]santa\b/.test(location.search)) return;
+  const C = {R:"#d8283a", W:"#ffffff", S:"#f2c9a0", Y:"#f3b562", K:"#8b5a2b", B:"#9a6438", D:"#5b3a1e", N:"#ff3b3b"};
+  const sleigh = ["....W.......","...RR.......","...SS.......","..RWWR.KK...","R.RRRRRRRRR.","RRRRRRRRRR..",".Y.......Y..","YYYYYYYYYYY."];
+  const deer = (lead) => ["...D.D..","....DD..","....BBB"+(lead ? "N" : "."),"BBBBBB..","BBBBBB..","B.B.B.B."];
+  let r = "";
+  const put = (rows, ox, oy) => rows.forEach((row, y) => [...row].forEach((ch, x) => { if(C[ch]) r += '<rect x="'+(ox+x)+'" y="'+(oy+y)+'" width="1" height="1" fill="'+C[ch]+'"/>'; }));
+  put(sleigh, 0, 1);
+  [14, 23, 32, 41].forEach((x, i) => put(deer(i === 3), x, 1));
+  r += '<line x1="11" y1="5.5" x2="46" y2="4.5" stroke="#f3b562" stroke-width=".5"/>';
+  const el = document.createElement("div");
+  el.id = "santaFly"; el.setAttribute("aria-hidden", "true");
+  el.innerHTML = '<svg viewBox="0 0 50 10" width="110" height="22" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">'+r+'</svg>';
+  document.querySelector("header").appendChild(el);
+})();
 /* routing */
 const VIEWS = ["browse","build","anyday","place","bars","give","meals","favs"];
 function route(){
