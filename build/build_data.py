@@ -46,7 +46,9 @@ for i,e in enumerate(o):
     vibe=re.sub(r'\s*\(see the [^)]*tab\)','',clean(e['vibe']))
     blob=(e['vibe']+' '+e['datetext']).lower()
     tags=[]
-    if re.search(r'\bfree\b',blob): tags.append('Free')
+    # "kids 6 and under free", "free for members" and the like do not make the event free
+    blob_free=re.sub(r'(\d+\s*(and|&|or)\s*(under|younger)|under\s*\d+|ages?\s*\d+\s*(and|&|or)\s*(under|younger)|kids?|children|members|toddlers|babies|infants|seniors|veterans)\W+(\w+\W+){0,2}free\b|\bfree\s+(for|to)\s+(kids|children|members|seniors|ages|those|anyone under)|\bfree\s+with\s+\w+|\bfree\s+(parking|shuttle|wifi|coffee|cocoa|hot chocolate|gift|refills?)\b','',blob)
+    if re.search(r'\bfree\b',blob_free) and not re.search(r'\$\s*\d|tickets? from|admission \$',blob): tags.append('Free')
     if re.search(r'ticket|\bbook|reserv|rsvp|register|buy|sells? out',(e['res']+' '+e['datetext']).lower()): tags.append('Book ahead')
     if 'Free' in tags and '$' in e['datetext']: tags.remove('Free')
     nmL=e['name'].lower(); blobL=(e['name']+' '+e['datetext']+' '+e['vibe']).lower()
