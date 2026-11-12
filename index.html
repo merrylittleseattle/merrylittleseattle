@@ -92,6 +92,17 @@ button{font:inherit;cursor:pointer}
 .actions a:hover{text-decoration:underline}
 .add{background:transparent;border:1px solid var(--glow);color:var(--glow);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:600}
 .add[aria-pressed="true"]{background:var(--glow);color:var(--night)}
+.act-r{display:flex;gap:8px;align-items:center;margin-left:auto}
+.heart{background:transparent;border:1px solid var(--ridge);color:var(--frost);border-radius:999px;width:36px;height:34px;padding:0;font-size:18px;line-height:1;cursor:pointer;flex:none}
+.actions a,.add{white-space:nowrap}
+.heart:hover{border-color:#ff9db0;color:#ffc2cf}
+.heart[data-lvl="1"]{border-color:#ff9db0;color:#ff9db0}
+.heart[data-lvl="2"]{border-color:var(--glow);color:var(--night);background:var(--glow)}
+.card.must{border-left-color:var(--glow)}
+.fav-when{font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--glow)}
+.fav-when.past{color:var(--frost);opacity:.7}
+.fav-tools{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 4px}
+.fav-area-note{color:var(--frost);font-size:14px;margin:-4px 0 10px}
 .empty{padding:18px;border:1px dashed var(--ridge);border-radius:14px;color:var(--frost)}
 .bar .type{color:var(--berry)}
 .card.meal{border-left-color:#5f8f73}
@@ -179,6 +190,7 @@ footer p{max-width:64ch;margin:0 0 8px}
     <a href="#bars" data-v="bars">Holiday bars</a>
     <a href="#give" data-v="give">Give back</a>
     <a href="#meals" data-v="meals">Community meals</a>
+    <a href="#favs" data-v="favs" id="favTab">Favorites</a>
   </div>
 </nav>
 
@@ -225,6 +237,12 @@ footer p{max-width:64ch;margin:0 0 8px}
     </div>
     <div class="chips" id="s-cats" role="group" aria-label="Type of event"></div>
     <div id="s-out"></div>
+  </section>
+
+  <section class="view" id="v-favs" aria-labelledby="h-favs">
+    <h2 id="h-favs">Favorites</h2>
+    <p class="intro">Save things now and figure out the dates later. Tap the <b>♡</b> on anything that looks fun. Tap it again to turn it gold, which marks it a <b>must do</b>. Your saves are grouped by area, with the one-day-only events flagged, so you can see where to build a day around them. Saves stay in this browser; nobody else can see them.</p>
+    <div id="fav-out"></div>
   </section>
 
   <section class="view" id="v-bars" aria-labelledby="h-bars">
@@ -322,7 +340,7 @@ const GIVE = JSON.parse(document.getElementById('data-give').textContent);
 const DRIVES = JSON.parse(document.getElementById('data-drives').textContent);
 const MEALS = JSON.parse(document.getElementById('data-meals').textContent);
 const HMEALS = JSON.parse(document.getElementById('data-hmeals').textContent);
-const UPDATED = "Nov 10, 2026";
+const UPDATED = "Nov 11, 2026";
 const SEASON_START = "2026-11-01", SEASON_END = "2027-01-10";
 const REGION_ORDER = ["North Seattle","Central Seattle","South & West Seattle","North of Seattle","Eastside","South Sound","Mountains","Islands & Peninsula","Farther Afield"];
 const $ = s => document.querySelector(s);
@@ -524,6 +542,7 @@ function refreshButtons(){
   });
   const days = Object.keys(plans).length;
   $("#mydayBtn").textContent = "My days (" + days + ")";
+  refreshHearts();
 }
 function sortedItems(d){ return sortList(plans[d]||[], d); }
 function sortList(list, d){
@@ -654,6 +673,33 @@ function link(e){
   const q = encodeURIComponent(e.n + " " + (e.a||"Seattle") + " 2026");
   return '<a href="https://www.google.com/search?q='+q+'" target="_blank" rel="noopener">Look it up</a>';
 }
+/* ---------- favorites (hearts) ---------- */
+/* keys: "e:<event name>", "b:<bar name>", "g:<give place name>", "d:<drive name>"; value 1 = saved, 2 = must do */
+let favs = {};
+try { favs = JSON.parse(localStorage.getItem("merry-favs")||"{}") || {}; } catch(e) {}
+function saveFavs(){ try { localStorage.setItem("merry-favs", JSON.stringify(favs)); } catch(e) {} }
+const HEART = ["♡", "♥", "♥"];
+function heartBtn(key){
+  const l = favs[key] || 0;
+  return '<button class="heart" type="button" data-fav="'+esc(key)+'" data-lvl="'+l+'" aria-label="'+(l ? (l === 2 ? "Must do. Tap to remove" : "Saved. Tap again for must do") : "Save to favorites")+'" title="'+(l === 1 ? "Tap again to mark it a must do" : l === 2 ? "Tap to remove" : "Save to favorites")+'">'+HEART[l]+'</button>';
+}
+function refreshHearts(){
+  document.querySelectorAll("[data-fav]").forEach(b => {
+    const l = favs[b.dataset.fav] || 0; b.dataset.lvl = l; b.textContent = HEART[l];
+    b.setAttribute("aria-label", l ? (l === 2 ? "Must do. Tap to remove" : "Saved. Tap again for must do") : "Save to favorites");
+    b.title = l === 1 ? "Tap again to mark it a must do" : l === 2 ? "Tap to remove" : "Save to favorites";
+    const c = b.closest(".card"); if(c) c.classList.toggle("must", l === 2);
+  });
+  const n = Object.keys(favs).length;
+  $("#favTab").textContent = n ? "Favorites (" + n + ")" : "Favorites";
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-fav]"); if(!b) return;
+  const k = b.dataset.fav, l = ((favs[k] || 0) + 1) % 3;
+  if(l) favs[k] = l; else delete favs[k];
+  saveFavs(); refreshHearts();
+  if(location.hash === "#favs") renderFavs();
+});
 function addBtn(key, d){ const on = inPlan(key, d||""); return '<button class="add" type="button" data-key="'+esc(key)+'" data-date="'+esc(d||"")+'" aria-pressed="'+on+'">'+(on?"In my day":"+ My day")+'</button>'; }
 function card(e, dateCtx){
   const tags = e.g.map(t => '<span class="tag '+({"Free":"free","Book ahead":"book","For adults":"adult","For kids":"kid","For dogs":"dog"}[t]||"")+'">'+esc(t)+'</span>').join("");
@@ -664,7 +710,7 @@ function card(e, dateCtx){
     '<div class="where">'+esc(e.loc ? e.loc + (e.loc.includes(e.a) ? "" : " · " + e.a) : e.a)+'</div>' +
     (e.v ? '<div class="vibe">'+esc(e.v)+'</div>' : '') +
     (tags ? '<div class="tags">'+tags+'</div>' : '') +
-    '<div class="actions">'+link(e)+addBtn("e:"+e.n, dateCtx)+'</div>' +
+    '<div class="actions">'+link(e)+'<span class="act-r">'+heartBtn("e:"+e.n)+addBtn("e:"+e.n, dateCtx)+'</span></div>' +
   '</article>';
 }
 function barCard(b, dateCtx){
@@ -673,7 +719,7 @@ function barCard(b, dateCtx){
     '<div class="when">'+(b.ok ? esc(b.w) : 'Usually '+esc(b.w)+' <span class="tbc">(2026 dates not announced yet)</span>')+(b.tm ? '<br>'+esc(b.tm) : '')+'</div>' +
     '<div class="where">'+esc(b.loc)+' · '+esc(b.a)+'</div>' +
     '<div class="vibe">'+esc(b.v)+'</div>' +
-    '<div class="actions"><a href="https://www.google.com/search?q='+q+'" target="_blank" rel="noopener">Check it is open</a>'+addBtn("b:"+b.n, dateCtx)+'</div></article>';
+    '<div class="actions"><a href="https://www.google.com/search?q='+q+'" target="_blank" rel="noopener">Check it is open</a><span class="act-r">'+heartBtn("b:"+b.n)+addBtn("b:"+b.n, dateCtx)+'</span></div></article>';
 }
 function giveCard(g, d){
   const h = d ? giveHours(g, d) : "";
@@ -682,7 +728,7 @@ function giveCard(g, d){
     (d ? '<div class="hours">'+(h ? fmtShort(d)+": "+esc(h) : "Not open "+fmtShort(d))+'</div>' : '<div class="hours">Open '+esc(week)+(g.nth?" (1st and 3rd only)":"")+'</div>') +
     '<div class="where">'+esc(g.loc)+' · '+esc(g.a)+'</div>' +
     '<div class="vibe">'+esc(g.v)+'</div>' +
-    '<div class="actions"><a href="'+esc(g.u)+'" target="_blank" rel="noopener">Their site</a>'+(!d || h ? addBtn("g:"+g.id, d) : "")+'</div></article>';
+    '<div class="actions"><a href="'+esc(g.u)+'" target="_blank" rel="noopener">Their site</a><span class="act-r">'+heartBtn("g:"+g.n)+(!d || h ? addBtn("g:"+g.id, d) : "")+'</span></div></article>';
 }
 function driveCard(x, d){
   const vol = x.k.includes("Time") && x.k.length === 1;
@@ -691,7 +737,7 @@ function driveCard(x, d){
     '<div class="hours">'+esc(span)+(x.sch ? '<br>'+esc(x.sch) : '')+'</div>' +
     '<div class="where">'+esc(x.loc)+' · '+esc(x.a)+'</div>' +
     '<div class="vibe">'+esc(x.v)+'</div>' +
-    '<div class="actions"><a href="'+esc(x.u)+'" target="_blank" rel="noopener">Details</a>'+(d ? addBtn("d:"+x.id, d) : "")+'</div></article>';
+    '<div class="actions"><a href="'+esc(x.u)+'" target="_blank" rel="noopener">Details</a><span class="act-r">'+heartBtn("d:"+x.n)+(d ? addBtn("d:"+x.id, d) : "")+'</span></div></article>';
 }
 function section(title, items, render){
   return '<h3>'+esc(title)+' <span class="n">'+items.length+'</span></h3>' +
@@ -968,15 +1014,85 @@ document.addEventListener("click", ev => {
   const d = ev.target.closest("[data-day-jump]"); if(d){ $("#d-date").value = d.dataset.dayJump; $("#d-region").value = ""; if(location.hash === "#anyday") renderAnyday(); }
   if(c || d) setTimeout(() => document.querySelector("nav.tabs").scrollIntoView({behavior:"smooth"}), 30);
 });
+/* ---------- favorites view ---------- */
+function favWhen(dates, today){
+  const up = dates.filter(d => d >= today);
+  if(!dates.length) return {txt:"Anytime this season", key:"9", fixed:false, past:false};
+  if(!up.length) return {txt:"Already happened", key:"z", fixed:false, past:true};
+  if(up.length === 1) return {txt:"Only " + fmtShort(up[0]), key:"0"+up[0], fixed:true, past:false};
+  if(up.length <= 3) return {txt:"Only " + up.map(fmtShort).join(" or "), key:"0"+up[0], fixed:true, past:false};
+  return {txt:"Through " + fmtShort(up[up.length-1]), key:"5"+up[up.length-1], fixed:false, past:false};
+}
+function favEntries(){
+  const today = todayIso(), out = [];
+  Object.keys(favs).forEach(k => {
+    const [t, n] = splitKey(k), lvl = favs[k];
+    if(t === "e" && evByName[n]) { const e = evByName[n]; out.push({k, lvl, a:e.a, r:e.r, w:favWhen(e.d, today), html:c => card(e, "")}); }
+    else if(t === "b" && barByName[n]) { const b = barByName[n]; out.push({k, lvl, a:b.a, r:b.r, w:{txt:b.ok ? b.w : "Usually " + b.w, key:"8", fixed:false, past:false}, html:() => barCard(b)}); }
+    else if(t === "g") { const g = GIVE.find(x => x.n === n); if(g) out.push({k, lvl, a:g.a, r:g.r, w:{txt:"Open most weeks", key:"9", fixed:false, past:false}, html:() => giveCard(g, "")}); }
+    else if(t === "d") { const x = DRIVES.find(z => z.n === n); if(x) {
+      const ds = x.s && x.e ? (x.s === x.e ? [x.s] : []) : [];
+      const w = x.s && x.s !== x.e ? (x.e < today ? {txt:"Already happened", key:"z", fixed:false, past:true} : {txt:"Through " + fmtShort(x.e), key:"5"+x.e, fixed:false, past:false}) : favWhen(ds, today);
+      out.push({k, lvl, a:x.a, r:AREA_REGION[x.a] || "", w, html:() => driveCard(x, "")}); } }
+  });
+  return out;
+}
+function renderFavs(){
+  const all = favEntries();
+  let h = "";
+  if(!all.length){
+    h = '<p class="empty">Nothing saved yet. Tap the <b>♡</b> on any event, pop-up bar or way to give back, and it shows up here, grouped by area.</p>';
+    $("#fav-out").innerHTML = h; refreshHearts(); return;
+  }
+  const must = all.filter(x => x.lvl === 2).length, fixed = all.filter(x => x.w.fixed).length;
+  h += '<p class="fav-area-note">'+all.length+' saved'+(must ? ', '+must+' must do' : '')+(fixed ? '. '+fixed+(fixed === 1 ? ' only happens' : ' only happen')+' on certain days, so start with those.' : '.')+'</p>';
+  h += '<div class="fav-tools"><button class="chipbtn" type="button" id="favSend">Send my favorites to another device</button></div>';
+  const groups = {};
+  all.forEach(x => (groups[x.a || "Other"] ||= []).push(x));
+  const score = g => (g.some(x => x.lvl === 2) ? 0 : 1) * 1000 - g.length;
+  Object.keys(groups).sort((a,b) => score(groups[a]) - score(groups[b]) || a.localeCompare(b)).forEach(a => {
+    const g = groups[a].sort((x,y) => (x.w.past - y.w.past) || (y.lvl - x.lvl) || x.w.key.localeCompare(y.w.key));
+    const fx = g.filter(x => x.w.fixed);
+    h += '<h3>'+esc(a)+' <span class="n">'+g.length+'</span></h3>';
+    if(fx.length && g.length > 1) h += '<p class="fav-area-note">'+esc(fx.map(x => x.w.txt.replace(/^Only /,"")).filter((v,i,arr) => arr.indexOf(v) === i).join("; "))+': the day'+(fx.length > 1 ? 's' : '')+' to plan '+esc(a)+' around.</p>';
+    h += '<div class="list">'+g.map(x => x.html().replace('<article class="card', '<article data-when="'+esc(x.w.txt)+'" class="card')).join("")+'</div>';
+  });
+  $("#fav-out").innerHTML = h;
+  /* show the "Only Dec 10" line at the top of each saved card */
+  document.querySelectorAll("#fav-out article[data-when]").forEach(a => {
+    const w = a.dataset.when, past = w === "Already happened";
+    a.insertAdjacentHTML("afterbegin", '<div class="fav-when'+(past ? ' past' : '')+'">'+esc(w)+'</div>');
+  });
+  refreshHearts(); refreshButtons();
+}
+/* send favorites to another device: the list rides along in the link */
+function favLink(){
+  const s = Object.keys(favs).map(k => favs[k] + k).join("\n");
+  const b64 = btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  return location.origin + location.pathname + "#favs=" + b64;
+}
+document.addEventListener("click", ev => { if(ev.target.closest("#favSend")) copyText(favLink(), "Link copied. Open it on your other device (text or email it to yourself) and your favorites will be there."); });
+(function(){
+  const m = location.hash.match(/^#favs=([\w-]+)/); if(!m) return;
+  try {
+    const s = decodeURIComponent(escape(atob(m[1].replace(/-/g,"+").replace(/_/g,"/"))));
+    let n = 0;
+    s.split("\n").forEach(line => { const l = +line[0], k = line.slice(1); if((l === 1 || l === 2) && k.includes(":")) { if(!favs[k] || favs[k] < l) { favs[k] = l; n++; } } });
+    saveFavs();
+    history.replaceState(null, "", "#favs");
+    setTimeout(() => flash(n ? n + " favorites added" : "Favorites already here"), 300);
+  } catch(e) { history.replaceState(null, "", "#favs"); }
+})();
+
 /* routing */
-const VIEWS = ["browse","build","anyday","place","bars","give","meals"];
+const VIEWS = ["browse","build","anyday","place","bars","give","meals","favs"];
 function route(){
   const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "browse";
   VIEWS.forEach(x => { $("#v-"+x).classList.toggle("on", x === v); const a = document.querySelector('nav.tabs a[data-v="'+x+'"]'); if(x === v) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
-  ({build:renderBuild, anyday:renderAnyday, place:renderPlace, browse:renderBrowse, bars:renderBars, give:renderGive, meals:renderMeals})[v]();
+  ({build:renderBuild, anyday:renderAnyday, place:renderPlace, browse:renderBrowse, bars:renderBars, give:renderGive, meals:renderMeals, favs:renderFavs})[v]();
 }
 window.addEventListener("hashchange", route);
-route(); renderDay(); refreshButtons();
+route(); renderDay(); refreshButtons(); refreshHearts();
 
 /* snowfall in the header, gentle; off for reduced motion */
 (function(){
