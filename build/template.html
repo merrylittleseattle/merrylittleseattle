@@ -1019,8 +1019,8 @@ function favWhen(dates, today){
   const up = dates.filter(d => d >= today);
   if(!dates.length) return {txt:"Anytime this season", key:"9", fixed:false, past:false};
   if(!up.length) return {txt:"Already happened", key:"z", fixed:false, past:true};
-  if(up.length === 1) return {txt:"Only " + fmtShort(up[0]), key:"0"+up[0], fixed:true, past:false};
-  if(up.length <= 3) return {txt:"Only " + up.map(fmtShort).join(" or "), key:"0"+up[0], fixed:true, past:false};
+  if(up.length === 1) return {txt:"Only " + fmtShort(up[0]), key:"0"+up[0], fixed:true, past:false, dates:up};
+  if(up.length <= 3) return {txt:"Only " + up.map(fmtShort).join(" or "), key:"0"+up[0], fixed:true, past:false, dates:up};
   return {txt:"Through " + fmtShort(up[up.length-1]), key:"5"+up[up.length-1], fixed:false, past:false};
 }
 function favEntries(){
@@ -1054,7 +1054,8 @@ function renderFavs(){
     const g = groups[a].sort((x,y) => (x.w.past - y.w.past) || (y.lvl - x.lvl) || x.w.key.localeCompare(y.w.key));
     const fx = g.filter(x => x.w.fixed);
     h += '<h3>'+esc(a)+' <span class="n">'+g.length+'</span></h3>';
-    if(fx.length && g.length > 1) h += '<p class="fav-area-note">'+esc(fx.map(x => x.w.txt.replace(/^Only /,"")).filter((v,i,arr) => arr.indexOf(v) === i).join("; "))+': the day'+(fx.length > 1 ? 's' : '')+' to plan '+esc(a)+' around.</p>';
+    const fdays = [...new Set(fx.flatMap(x => x.w.dates || []))].sort();
+    if(fdays.length && g.length > 1) h += '<p class="fav-area-note">Date'+(fdays.length > 1 ? 's' : '')+' to plan '+esc(a)+' around: '+fdays.map(d => '<b>'+esc(fmtShort(d))+'</b>').join(" · ")+'</p>';
     h += '<div class="list">'+g.map(x => x.html().replace('<article class="card', '<article data-when="'+esc(x.w.txt)+'" class="card')).join("")+'</div>';
   });
   $("#fav-out").innerHTML = h;
