@@ -20,7 +20,7 @@ jobs:
         env:
           SHEET_URL: ${{ secrets.SHEET_URL }}
         run: |
-          curl -fsSL "$SHEET_URL" -o "$RUNNER_TEMP/sheet.json"
+          curl -fsSL --retry 3 --retry-delay 30 --retry-all-errors --max-time 300 "$SHEET_URL" -o "$RUNNER_TEMP/sheet.json"
           python3 - "$RUNNER_TEMP" <<'EOF'
           import json, sys
           d = json.load(open(sys.argv[1] + '/sheet.json'))
