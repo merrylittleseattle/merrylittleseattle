@@ -121,6 +121,7 @@ button{font:inherit;cursor:pointer}
 .fav-when{font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--glow)}
 .fav-when.past{color:var(--frost);opacity:.7}
 .fav-tools{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 4px}
+#favSendBox{margin:6px 0 14px;max-width:640px}#favSendBox p{margin:0 0 6px;font-weight:600}#favSendLink{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--ridge);border-radius:8px;background:var(--dusk);color:var(--snow);font:inherit;font-size:14px}
 .fav-area-note{color:var(--frost);font-size:14px;margin:-4px 0 10px}
 .empty{padding:18px;border:1px dashed var(--ridge);border-radius:14px;color:var(--frost)}
 .bar .type{color:var(--berry)}
@@ -1065,7 +1066,8 @@ function renderFavs(){
   }
   const must = all.filter(x => x.lvl === 2).length, fixed = all.filter(x => x.w.fixed).length;
   h += '<p class="fav-area-note">'+all.length+' saved'+(must ? ', '+must+' must do' : '')+(fixed ? '. '+fixed+(fixed === 1 ? ' only happens' : ' only happen')+' on certain days, so start with those.' : '.')+'</p>';
-  h += '<div class="fav-tools"><button class="chipbtn" type="button" id="favSend">Send my favorites to another device</button></div>';
+  h += '<div class="fav-tools"><button class="chipbtn" type="button" id="favSend">Send my favorites to another device</button></div>'
+     + '<div id="favSendBox" hidden><p id="favSendMsg" role="status"></p><input id="favSendLink" type="text" readonly aria-label="Link with your favorites"></div>';
   const groups = {};
   all.forEach(x => (groups[x.a || "Other"] ||= []).push(x));
   const score = g => (g.some(x => x.lvl === 2) ? 0 : 1) * 1000 - g.length;
@@ -1091,8 +1093,20 @@ function favLink(){
   const b64 = btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
   return location.origin + location.pathname + "#favs=" + b64;
 }
-document.addEventListener("click", ev => { if(ev.target.closest("#favSend")) copyText(favLink(), "Link copied. Open it on your other device (text or email it to yourself) and your favorites will be there."); });
-(function(){
+document.addEventListener("click", async ev => {
+  if(!ev.target.closest("#favSend")) return;
+  const link = favLink(), box = $("#favSendBox"), msg = $("#favSendMsg"), inp = $("#favSendLink");
+  box.hidden = false; inp.value = link;
+  if(navigator.share && matchMedia("(pointer: coarse)").matches){
+    try { await navigator.share({title: "My Merry Little Seattle favorites", url: link}); msg.textContent = "Sent. Open the link on your other device and your favorites will be there."; return; }
+    catch(e){ if(e && e.name === "AbortError"){ msg.textContent = "Here's your link if you want to copy it instead:"; inp.select(); return; } }
+  }
+  try { await navigator.clipboard.writeText(link); msg.textContent = "Link copied. Text or email it to yourself, open it on your other device, and your favorites will be there."; }
+  catch(e){ msg.textContent = "Copy this link, then text or email it to yourself:"; }
+  inp.focus(); inp.select();
+});
+document.addEventListener("focusin", ev => { if(ev.target.id === "favSendLink") ev.target.select(); });
+function importFavs(){
   const m = location.hash.match(/^#favs=([\w-]+)/); if(!m) return;
   try {
     const s = decodeURIComponent(escape(atob(m[1].replace(/-/g,"+").replace(/_/g,"/"))));
@@ -1102,7 +1116,8 @@ document.addEventListener("click", ev => { if(ev.target.closest("#favSend")) cop
     history.replaceState(null, "", "#favs");
     setTimeout(() => flash(n ? n + " favorites added" : "Favorites already here"), 300);
   } catch(e) { history.replaceState(null, "", "#favs"); }
-})();
+}
+importFavs();
 
 
 /* ---------- Santa flyby (Dec 24 and 25 in Seattle; add ?santa to the address to preview) ---------- */
@@ -1129,7 +1144,7 @@ function route(){
   VIEWS.forEach(x => { $("#v-"+x).classList.toggle("on", x === v); const a = document.querySelector('nav.tabs a[data-v="'+x+'"]'); if(x === v) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
   ({build:renderBuild, anyday:renderAnyday, place:renderPlace, browse:renderBrowse, bars:renderBars, give:renderGive, meals:renderMeals, favs:renderFavs})[v]();
 }
-window.addEventListener("hashchange", route);
+window.addEventListener("hashchange", () => { importFavs(); route(); });
 route(); renderDay(); refreshButtons(); refreshHearts();
 
 /* snowfall in the header, gentle; off for reduced motion */
