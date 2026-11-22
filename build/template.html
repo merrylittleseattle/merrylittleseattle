@@ -355,6 +355,7 @@ footer p{max-width:64ch;margin:0 0 8px}
       <button class="ghost" type="button" id="copyDay">Copy my day</button>
       <button class="ghost" type="button" id="copyAll">Copy all days</button>
       <button class="ghost" type="button" id="icsAll">Download all days for my calendar</button>
+      <button class="ghost" type="button" id="daysSend">Send my days to another device</button>
       <button class="ghost" type="button" id="clearDay">Delete this day</button>
       <span id="copied" role="status"></span>
     </div>
@@ -768,6 +769,38 @@ async function copyText(t, okMsg){
 }
 $("#copyDay").addEventListener("click", () => copyText($("#dayText").value, "Copied this day. Paste it into a text."));
 $("#copyAll").addEventListener("click", () => copyText(allText(), "Copied every day."));
+/* send planned days to another device: the plan rides along in the link (#days=) */
+function daysLink(){
+  const s = Object.keys(plans).sort().flatMap(d => plans[d].map(k => d + "\t" + k)).join("\n");
+  const b64 = btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  return location.origin + location.pathname + "#days=" + b64;
+}
+$("#daysSend").addEventListener("click", async () => {
+  if(!Object.keys(plans).length) { $("#copied").textContent = "Plan a day first, then you can send it."; return; }
+  const link = daysLink();
+  if(navigator.share && matchMedia("(pointer: coarse)").matches){
+    try { await navigator.share({title: "My Merry Little Seattle days", url: link}); $("#copied").textContent = "Sent. Open the link on your other device and your days will be there."; return; }
+    catch(e){ if(e && e.name === "AbortError") return; }
+  }
+  try { await navigator.clipboard.writeText(link); $("#copied").textContent = "Link copied. Text or email it to yourself and open it on your other device. Your days will be added there."; }
+  catch(e){ $("#dayText").value = link; $("#copied").textContent = "Copy the link in the box above and send it to yourself."; }
+});
+function importDays(){
+  const m = location.hash.match(/^#days=([\w-]+)/); if(!m) return;
+  let n = 0;
+  try {
+    const s = decodeURIComponent(escape(atob(m[1].replace(/-/g,"+").replace(/_/g,"/"))));
+    s.split("\n").forEach(line => {
+      const [d, k] = line.split("\t");
+      if(!/^\d{4}-\d\d-\d\d$/.test(d || "") || !k || !itemOf(k)) return;
+      (plans[d] ||= []); if(!plans[d].includes(k)) { plans[d].push(k); n++; }
+    });
+    const ds = Object.keys(plans).sort(); if(ds.length && !plans[activeDay]) activeDay = ds.find(d => d >= todayIso()) || ds[0];
+    savePlans();
+  } catch(e) {}
+  history.replaceState(null, "", location.pathname + location.search);
+  setTimeout(() => { flash(n ? n + " plans added to My days" : "Those days are already here"); refreshButtons(); renderDay(); $("#mydayBtn").click(); }, 300);
+}
 
 /* ---------- Share a day by link ---------- */
 function b64e(t){ return btoa(String.fromCharCode(...new TextEncoder().encode(t))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
@@ -1337,7 +1370,8 @@ function route(){
   VIEWS.forEach(x => { $("#v-"+x).classList.toggle("on", x === v); const a = document.querySelector('nav.tabs a[data-v="'+x+'"]'); if(x === v) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
   ({build:renderBuild, anyday:renderAnyday, place:renderPlace, browse:renderBrowse, bars:renderBars, give:renderGive, meals:renderMeals, favs:renderFavs})[v]();
 }
-window.addEventListener("hashchange", () => { importFavs(); route(); });
+window.addEventListener("hashchange", () => { importFavs(); importDays(); route(); });
+importDays();
 route(); renderDay(); refreshButtons(); refreshHearts();
 
 /* snowfall in the header, gentle; off for reduced motion */
