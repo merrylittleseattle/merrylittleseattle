@@ -118,6 +118,7 @@ button{font:inherit;cursor:pointer}
 .heart[data-lvl="1"]{border-color:#ff9db0;color:#ff9db0}
 .heart[data-lvl="2"]{border-color:var(--glow);color:var(--night);background:var(--glow)}
 .card.must{border-left-color:var(--glow)}
+.card.unfav{opacity:.45}
 .fav-when{font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--glow)}
 .fav-when.past{color:var(--frost);opacity:.7}
 .fav-tools{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 4px}
@@ -163,6 +164,22 @@ a.pill:hover{border-color:var(--glow)}
 #myday h2{font-size:28px}
 .dayitem{display:grid;grid-template-columns:84px 1fr auto;gap:12px;padding:12px 0;border-bottom:1px solid var(--ridge);align-items:start}
 .dayitem .t{font-variant-numeric:tabular-nums;color:var(--glow);font-weight:600;font-size:14px}
+.dayitem .dlinks{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px;font-size:14px}
+.dayitem .dbtns{display:flex;flex-direction:column;gap:6px}
+.dayviews{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 12px}
+.cal-month h3{margin:14px 0 8px;font-size:18px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal .dow{font-size:12px;color:var(--frost);text-align:center;padding-bottom:2px}
+.cal .cd{min-height:78px;border:1px solid var(--ridge);border-radius:8px;padding:4px 5px;font:inherit;font-size:12px;text-align:left;background:transparent;color:var(--snow);display:flex;flex-direction:column;gap:2px;overflow:hidden;min-width:0}
+.cal .cd.past{opacity:.55}
+.cal .cd.has{border-color:var(--glow);cursor:pointer}
+.cal .cd.has:hover,.cal .cd.on{background:var(--ridge)}
+.cal .cd.today .num{background:var(--glow);color:var(--night);border-radius:999px;padding:0 6px}
+.cal .num{font-weight:700;font-variant-numeric:tabular-nums;align-self:flex-start}
+.cal .it{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11.5px;line-height:1.3;color:var(--snow)}
+.cal .it.more{color:var(--frost)}
+.cal .cnt{display:none}
+@media (max-width:620px){.cal .cd{min-height:52px;align-items:center}.cal .it{display:none}.cal .cnt{display:block;background:var(--glow);color:var(--night);border-radius:999px;font-weight:700;padding:0 7px;margin-top:2px}.cal .num{align-self:center}}
 .dayitem .x{background:transparent;border:1px solid var(--ridge);color:var(--frost);border-radius:8px;padding:4px 9px}
 .row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
 .primary{background:var(--glow);color:var(--night);border:0;border-radius:10px;padding:10px 16px;font-weight:700}
@@ -261,7 +278,7 @@ footer p{max-width:64ch;margin:0 0 8px}
 
   <section class="view" id="v-favs" aria-labelledby="h-favs">
     <h2 id="h-favs">Favorites</h2>
-    <p class="intro">Save things now and figure out the dates later. Tap the <b>♡</b> on anything that looks fun. Tap it again to turn it gold, which marks it a <b>must do</b>. Your saves are grouped by area, with the one-day-only events flagged, so you can see where to build a day around them. Saves stay in this browser; nobody else can see them.</p>
+    <p class="intro">Save things now and figure out the dates later. Tap the <b>♡</b> on anything that looks fun. Tap it again to turn it gold, which marks it a <b>must do</b>. Sort them by date to see what's coming up, or by area to build a day around one neighborhood. Saves stay in this browser; nobody else can see them.</p>
     <div id="fav-out"></div>
   </section>
 
@@ -323,13 +340,21 @@ footer p{max-width:64ch;margin:0 0 8px}
         <button class="ghost" type="button" id="sharedSkip">No thanks</button>
       </div>
     </div>
+    <div class="dayviews" id="dayViews" role="group" aria-label="How to show your days">
+      <button type="button" class="chipbtn" data-dv="list" aria-pressed="true">One day at a time</button>
+      <button type="button" class="chipbtn" data-dv="month" aria-pressed="false">Month calendar</button>
+    </div>
+    <div id="dayCal" hidden></div>
+    <div id="dayListView">
     <div class="plantabs" id="planTabs" aria-label="Your planned days"></div>
     <p class="note" id="dayDate"></p>
     <div id="dayList"></div>
+    </div>
     <div class="row">
       <button class="primary" type="button" id="shareDay">Share this day</button>
       <button class="ghost" type="button" id="copyDay">Copy my day</button>
       <button class="ghost" type="button" id="copyAll">Copy all days</button>
+      <button class="ghost" type="button" id="icsAll">Download all days for my calendar</button>
       <button class="ghost" type="button" id="clearDay">Delete this day</button>
       <span id="copied" role="status"></span>
     </div>
@@ -534,11 +559,74 @@ function splitKey(key){ const i = String(key).indexOf(":"); return i < 0 ? ["", 
 })();
 function itemOf(key){
   const [k, v] = splitKey(key); const i = +v;
-  if(k === "e" && evByName[v]) { const e = evByName[v]; return {name:e.n, tm:e.tm, loc:e.loc||e.a, u:e.u}; }
-  if(k === "b" && barByName[v]) { const b = barByName[v]; return {name:b.n + " (holiday pop-up bar)", tm:b.tm || "evening", loc:b.loc, u:""}; }
-  if(k === "d") { const x = DRIVES.find(z => z.id === i); if(x) return {name:(x.k.includes("Time") ? "Volunteer: " : "Give: ") + x.n, tm:x.sch, loc:x.loc, u:x.u}; }
-  if(k === "g" && giveById[i]) { const g = giveById[i]; return {name:"Give: " + g.n, tm:"", loc:g.loc, u:g.u, give:g}; }
+  if(k === "e" && evByName[v]) { const e = evByName[v]; return {name:e.n, tm:e.tm, loc:e.loc||e.a, u:e.u, d:e.d,
+    link: e.u ? {href:e.u, label:"Event page"} : {href:gsearch(e.n + " " + (e.a||"Seattle") + " 2026"), label:"Look it up"}}; }
+  if(k === "b" && barByName[v]) { const b = barByName[v]; return {name:b.n + " (holiday pop-up bar)", tm:b.tm || "evening", loc:b.loc, u:"",
+    link:{href:gsearch(b.n + " Seattle 2026"), label:"Check it is open"}}; }
+  if(k === "d") { const x = DRIVES.find(z => z.id === i); if(x) return {name:(x.k.includes("Time") ? "Volunteer: " : "Give: ") + x.n, tm:x.sch, loc:x.loc, u:x.u,
+    link: x.u ? {href:x.u, label:"Details"} : null}; }
+  if(k === "g" && giveById[i]) { const g = giveById[i]; return {name:"Give: " + g.n, tm:"", loc:g.loc, u:g.u, give:g,
+    link: g.u ? {href:g.u, label:"Their site"} : null}; }
   return null;
+}
+function gsearch(q){ return "https://www.google.com/search?q=" + encodeURIComponent(q); }
+
+/* ---------- calendar export (Google link per item, .ics file for everything) ---------- */
+/* start and end in minutes for item it on day d; null when no clock time is listed (then it is an all-day entry) */
+function itemTimes(it, d){
+  const t = it.give ? giveHours(it.give, d) : dayPart(it.tm || "", d);
+  if(!t || !(it.give || clock(it.tm, d))) return null;
+  const st = timeKey(t); if(st === 9999) return null;
+  let en = st + 120;
+  const s = stripDates(t.toLowerCase()).replace(/\bnoon\b/g, "12pm");
+  const r = /(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*(?:to|until|-|–)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/.exec(s);
+  if(r){
+    let h = +r[4], m = +(r[5]||0); const ap = r[6] || (h < 12 && h * 60 + m <= st % 720 ? "pm" : "");
+    if(ap === "pm" && h < 12) h += 12; if(ap === "am" && h === 12) h = 0;
+    let e2 = h * 60 + m;
+    if(!r[6] && e2 <= st) e2 += 720;
+    if(e2 > st && e2 - st <= 16 * 60) en = Math.min(e2, 1439);
+  } else if(!/^\s*\d/.test(s)){
+    /* "Dusk to 10pm": the start is a word, the end is a clock time */
+    const r2 = /(?:to|until|-|–)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)/.exec(s);
+    if(r2){ let h = +r2[1]; if(r2[3] === "pm" && h < 12) h += 12; if(r2[3] === "am" && h === 12) h = 0; const e2 = h * 60 + +(r2[2]||0); if(e2 > st) en = e2; }
+  }
+  return {st, en: Math.min(en, 1439)};
+}
+const calStamp = (d, min) => d.replace(/-/g, "") + "T" + pad(Math.floor(min/60)) + pad(min % 60) + "00";
+function nextIso(d){ const x = parseIso(d); x.setDate(x.getDate() + 1); return iso(x); }
+function calDetails(it){ return [it.loc ? "Where: " + it.loc : "", it.link ? it.link.label + ": " + it.link.href : "", "From merrylittleseattle.com"].filter(Boolean).join("\n"); }
+function gcalUrl(it, d){
+  const tm = itemTimes(it, d);
+  const dates = tm ? calStamp(d, tm.st) + "/" + calStamp(d, tm.en) : d.replace(/-/g, "") + "/" + nextIso(d).replace(/-/g, "");
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(it.name) +
+    "&dates=" + dates + "&ctz=America/Los_Angeles&location=" + encodeURIComponent(it.loc || "") + "&details=" + encodeURIComponent(calDetails(it));
+}
+function icsEsc(s){ return String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n"); }
+function icsFold(line){ let out = ""; while(line.length > 74){ out += line.slice(0, 74) + "\r\n "; line = line.slice(74); } return out + line; }
+function buildIcs(days){
+  const now = new Date(), stamp = now.getUTCFullYear() + pad(now.getUTCMonth()+1) + pad(now.getUTCDate()) + "T" + pad(now.getUTCHours()) + pad(now.getUTCMinutes()) + "00Z";
+  const L = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Merry Little Seattle//My days//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:Merry Little Seattle",
+    "BEGIN:VTIMEZONE","TZID:America/Los_Angeles",
+    "BEGIN:DAYLIGHT","TZOFFSETFROM:-0800","TZOFFSETTO:-0700","TZNAME:PDT","DTSTART:19700308T020000","RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU","END:DAYLIGHT",
+    "BEGIN:STANDARD","TZOFFSETFROM:-0700","TZOFFSETTO:-0800","TZNAME:PST","DTSTART:19701101T020000","RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU","END:STANDARD",
+    "END:VTIMEZONE"];
+  days.forEach(d => sortedItems(d).forEach(({k, it}) => {
+    const tm = itemTimes(it, d);
+    let h = 0; for(const c of k + d) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    L.push("BEGIN:VEVENT", "UID:" + d + "-" + h.toString(36) + "@merrylittleseattle.com", "DTSTAMP:" + stamp,
+      tm ? "DTSTART;TZID=America/Los_Angeles:" + calStamp(d, tm.st) : "DTSTART;VALUE=DATE:" + d.replace(/-/g, ""),
+      tm ? "DTEND;TZID=America/Los_Angeles:" + calStamp(d, tm.en) : "DTEND;VALUE=DATE:" + nextIso(d).replace(/-/g, ""),
+      icsFold("SUMMARY:" + icsEsc(it.name)), icsFold("LOCATION:" + icsEsc(it.loc)), icsFold("DESCRIPTION:" + icsEsc(calDetails(it))),
+      ...(it.link ? [icsFold("URL:" + it.link.href)] : []), "END:VEVENT");
+  }));
+  L.push("END:VCALENDAR");
+  return L.join("\r\n") + "\r\n";
+}
+function downloadIcs(days, name){
+  const blob = new Blob([buildIcs(days)], {type:"text/calendar;charset=utf-8"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
 }
 function inPlan(key, d){ return d ? (plans[d]||[]).includes(key) : Object.values(plans).some(l => l.includes(key)); }
 function addTo(key, d){
@@ -575,15 +663,58 @@ function renderDay(){
   $("#planTabs").innerHTML = ds.map(d => '<button type="button" data-plan="'+d+'" aria-pressed="'+(d===activeDay)+'">'+esc(fmtShort(d))+' ('+plans[d].length+')</button>').join("");
   if(!ds.length){
     $("#dayDate").textContent = "Tap \"+ My day\" on anything. You can plan as many days as you like; they stay saved in this browser.";
-    $("#dayList").innerHTML = ""; $("#dayText").value = ""; return;
+    $("#dayList").innerHTML = ""; $("#dayText").value = ""; if(dayView === "month") renderCal(); return;
   }
   const d = activeDay;
   $("#dayDate").textContent = fmtLong(d) + ". Sunset " + sunset(d) + "." + (HOLIDAY_NOTE[d] ? " " + HOLIDAY_NOTE[d] + ": hours may differ, so check ahead." : "");
-  $("#dayList").innerHTML = sortedItems(d).map(({k,it}) => {
-    const t = it.give ? (giveHours(it.give, d) || "Closed this day") : (clock(it.tm, d) || "Anytime");
-    return '<div class="dayitem"><div class="t">'+esc(t)+'</div><div><strong>'+esc(it.name)+'</strong><div class="where">'+esc(it.loc)+'</div></div><button class="x" type="button" data-rm="'+esc(k)+'" aria-label="Remove '+esc(it.name)+'">Remove</button></div>';
-  }).join("");
+  $("#dayList").innerHTML = itemRows(plans[d], d, true);
   $("#dayText").value = dayText(d);
+  if(dayView === "month") renderCal();
+}
+function itemRow(k, it, d, editable){
+  const t = it.give ? (giveHours(it.give, d) || "Closed this day") : (clock(it.tm, d) || "Anytime");
+  const links = (it.link ? '<a href="'+esc(it.link.href)+'" target="_blank" rel="noopener">'+esc(it.link.label)+'</a>' : '') +
+    (editable ? '<a href="'+esc(gcalUrl(it, d))+'" target="_blank" rel="noopener">Add to Google Calendar</a>' : '');
+  return '<div class="dayitem"><div class="t">'+esc(t)+'</div><div><strong>'+esc(it.name)+'</strong><div class="where">'+esc(it.loc)+'</div>' +
+    (links ? '<div class="dlinks">'+links+'</div>' : '') + '</div>' +
+    (editable ? '<div class="dbtns"><button class="x" type="button" data-mv="'+esc(k)+'" aria-label="Move '+esc(it.name)+' to another day">Move</button>' +
+      '<button class="x" type="button" data-rm="'+esc(k)+'" aria-label="Remove '+esc(it.name)+'">Remove</button></div>' : '') + '</div>';
+}
+
+/* month view of every planned day */
+let dayView = "list";
+try { if(localStorage.getItem("merry-dayview") === "month") dayView = "month"; } catch(e) {}
+function setDayView(v){
+  dayView = v; try { localStorage.setItem("merry-dayview", v); } catch(e) {}
+  document.querySelectorAll("#dayViews [data-dv]").forEach(b => b.setAttribute("aria-pressed", b.dataset.dv === v));
+  $("#dayListView").hidden = v !== "list"; $("#dayCal").hidden = v !== "month";
+  if(v === "month") renderCal();
+}
+function renderCal(){
+  const ds = Object.keys(plans).sort(), today = todayIso();
+  const first = (ds[0] && ds[0] < today ? ds[0] : clampSeason(today)).slice(0, 7);
+  const last = ds.length && ds[ds.length-1].slice(0, 7) > first ? ds[ds.length-1].slice(0, 7) : first;
+  let h = "", y = +first.slice(0, 4), m = +first.slice(5, 7);
+  while(true){
+    const ym = y + "-" + pad(m);
+    const start = new Date(y, m-1, 1), days = new Date(y, m, 0).getDate();
+    h += '<div class="cal-month"><h3>' + esc(start.toLocaleDateString("en-US", {month:"long", year:"numeric"})) + '</h3><div class="cal">' +
+      ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(n => '<div class="dow" aria-hidden="true">'+n+'</div>').join("") +
+      '<div class="pad"></div>'.repeat(start.getDay());
+    for(let i = 1; i <= days; i++){
+      const d = ym + "-" + pad(i), list = plans[d] ? sortedItems(d) : [];
+      const cls = "cd" + (list.length ? " has" : "") + (d === today ? " today" : "") + (d === activeDay && list.length ? " on" : "") + (d < today ? " past" : "");
+      const label = fmtLong(d) + (list.length ? ", " + list.length + (list.length === 1 ? " plan" : " plans") : "");
+      const inner = '<span class="num">'+i+'</span>' + (list.length ? '<span class="cnt">'+list.length+'</span>' +
+        list.slice(0, 3).map(x => '<span class="it">'+esc(x.it.name)+'</span>').join("") + (list.length > 3 ? '<span class="it more">+'+(list.length-3)+' more</span>' : '') : '');
+      h += list.length ? '<button type="button" class="'+cls+'" data-cal="'+d+'" aria-label="'+esc(label)+'">'+inner+'</button>' : '<div class="'+cls+'" aria-label="'+esc(label)+'">'+inner+'</div>';
+    }
+    h += '</div></div>';
+    if(ym === last || h.length > 200000) break;
+    m++; if(m > 12){ m = 1; y++; }
+  }
+  if(!ds.length) h = '<p class="note">Nothing planned yet. Days you plan show up on this calendar.</p>' + h;
+  $("#dayCal").innerHTML = h;
 }
 function dayText(d){
   const items = sortedItems(d); if(!items.length) return "";
@@ -601,7 +732,20 @@ $("#mydayBtn").addEventListener("click", () => { const o = $("#myday").classList
 $("#closeDay").addEventListener("click", () => { $("#myday").classList.remove("open"); $("#mydayBtn").setAttribute("aria-expanded", false); });
 $("#planTabs").addEventListener("click", ev => { const b = ev.target.closest("[data-plan]"); if(!b) return; activeDay = b.dataset.plan; savePlans(); renderDay(); });
 $("#clearDay").addEventListener("click", () => { if(!activeDay) return; delete plans[activeDay]; activeDay = Object.keys(plans).sort()[0] || ""; savePlans(); renderDay(); refreshButtons(); });
-$("#dayList").addEventListener("click", ev => { const b = ev.target.closest("[data-rm]"); if(b) removeFrom(b.dataset.rm, activeDay); });
+$("#dayList").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-rm]"); if(b) { removeFrom(b.dataset.rm, activeDay); return; }
+  const mv = ev.target.closest("[data-mv]"); if(!mv) return;
+  const key = mv.dataset.mv, [k, v] = splitKey(key);
+  openChooser(key, itemOf(key)?.name || "", k === "e" ? (evByName[v]?.d || []) : [], activeDay);
+});
+$("#dayViews").addEventListener("click", ev => { const b = ev.target.closest("[data-dv]"); if(b) setDayView(b.dataset.dv); });
+$("#dayCal").addEventListener("click", ev => { const b = ev.target.closest("[data-cal]"); if(!b) return; activeDay = b.dataset.cal; savePlans(); setDayView("list"); renderDay(); });
+$("#icsAll").addEventListener("click", () => {
+  const ds = Object.keys(plans).sort(); if(!ds.length) { $("#copied").textContent = "Plan a day first, then you can add it to your calendar."; return; }
+  downloadIcs(ds, "merry-little-seattle.ics");
+  $("#copied").textContent = "Downloaded. Open the file to add every planned day to your calendar.";
+});
+setDayView(dayView);
 async function copyText(t, okMsg){
   if(!t) return;
   try { await navigator.clipboard.writeText(t); $("#copied").textContent = okMsg; }
@@ -624,12 +768,8 @@ $("#shareDay").addEventListener("click", async () => {
   copyText(url, "Link copied. Send it to anyone and it opens this day.");
 });
 let shared = null;
-function itemRows(list, d, removable){
-  return sortList(list, d).map(({k,it}) => {
-    const t = it.give ? (giveHours(it.give, d) || "Closed this day") : (clock(it.tm, d) || "Anytime");
-    return '<div class="dayitem"><div class="t">'+esc(t)+'</div><div><strong>'+esc(it.name)+'</strong><div class="where">'+esc(it.loc)+'</div></div>' +
-      (removable ? '<button class="x" type="button" data-rm="'+esc(k)+'" aria-label="Remove '+esc(it.name)+'">Remove</button>' : '') + '</div>';
-  }).join("");
+function itemRows(list, d, editable){
+  return sortList(list || [], d).map(({k,it}) => itemRow(k, it, d, editable)).join("");
 }
 function clearShareUrl(){ try { history.replaceState(null, "", location.pathname + location.hash); } catch(e) {} }
 function closeShared(){ shared = null; $("#sharedBox").hidden = true; clearShareUrl(); }
@@ -659,19 +799,31 @@ $("#sharedSave").addEventListener("click", () => {
 $("#sharedSkip").addEventListener("click", closeShared);
 
 /* choose-a-day dialog, for things picked outside a dated view */
-let pendingKey = "";
-function openChooser(key, name, dates){
-  pendingKey = key;
-  $("#chooseName").textContent = name;
-  const up = dates.filter(d => d >= todayIso()).slice(0, 8);
-  const planDays = Object.keys(plans).sort().filter(d => !up.includes(d)).slice(0, 4);
+let pendingKey = "", pendingFrom = "";
+function openChooser(key, name, dates, from){
+  pendingKey = key; pendingFrom = from || "";
+  $("#h-choose").textContent = pendingFrom ? "Move to which day?" : "Add to which day?";
+  $("#chooseOk").textContent = pendingFrom ? "Move it" : "Add it";
+  $("#chooseName").textContent = name + (pendingFrom ? " (now on " + fmtShort(pendingFrom) + ")" : "");
+  const up = dates.filter(d => d >= todayIso() && d !== pendingFrom).slice(0, 8);
+  const planDays = Object.keys(plans).sort().filter(d => !up.includes(d) && d !== pendingFrom).slice(0, 4);
   $("#chooseQuick").innerHTML = up.concat(planDays).map(d => '<button type="button" class="chipbtn" data-v="'+d+'">'+esc(fmtShort(d))+(planDays.includes(d) ? " (planned)" : "")+'</button>').join("");
-  const ci = $("#chooseDate"); ci.min = SEASON_START; ci.max = SEASON_END; ci.value = up[0] || activeDay || clampSeason(todayIso());
+  const ci = $("#chooseDate"); ci.min = SEASON_START; ci.max = SEASON_END; ci.value = up[0] || (pendingFrom ? nextIso(pendingFrom) : activeDay) || clampSeason(todayIso());
   $("#chooser").classList.add("open"); ci.focus();
 }
-function closeChooser(){ $("#chooser").classList.remove("open"); pendingKey = ""; }
-$("#chooseQuick").addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if(!b) return; addTo(pendingKey, b.dataset.v); closeChooser(); });
-$("#chooseOk").addEventListener("click", () => { const v = $("#chooseDate").value; if(v) addTo(pendingKey, v); closeChooser(); });
+function closeChooser(){ $("#chooser").classList.remove("open"); pendingKey = ""; pendingFrom = ""; }
+function choose(v){
+  if(!v || !pendingKey) return;
+  if(pendingFrom && v !== pendingFrom){
+    plans[pendingFrom] = (plans[pendingFrom] || []).filter(k => k !== pendingKey);
+    if(!plans[pendingFrom].length) delete plans[pendingFrom];
+    (plans[v] ||= []); if(!plans[v].includes(pendingKey)) plans[v].push(pendingKey);
+    activeDay = v; savePlans(); renderDay(); refreshButtons(); flash("Moved to " + fmtShort(v));
+  } else if(!pendingFrom) addTo(pendingKey, v);
+  closeChooser();
+}
+$("#chooseQuick").addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if(b) choose(b.dataset.v); });
+$("#chooseOk").addEventListener("click", () => choose($("#chooseDate").value));
 $("#chooseCancel").addEventListener("click", closeChooser);
 $("#chooser").addEventListener("click", ev => { if(ev.target.id === "chooser") closeChooser(); });
 document.addEventListener("keydown", ev => { if(ev.key === "Escape") closeChooser(); });
@@ -718,7 +870,8 @@ document.addEventListener("click", ev => {
   const k = b.dataset.fav, l = ((favs[k] || 0) + 1) % 3;
   if(l) favs[k] = l; else delete favs[k];
   saveFavs(); refreshHearts();
-  if(location.hash === "#favs") renderFavs();
+  /* on the Favorites page, leave the card where it is (faded) so nothing jumps; it drops off next time the page opens */
+  const c = b.closest("#fav-out .card"); if(c) c.classList.toggle("unfav", !l);
 });
 function addBtn(key, d){ const on = inPlan(key, d||""); return '<button class="add" type="button" data-key="'+esc(key)+'" data-date="'+esc(d||"")+'" aria-pressed="'+on+'">'+(on?"In my day":"+ My day")+'</button>'; }
 function card(e, dateCtx){
@@ -1057,28 +1210,53 @@ function favEntries(){
   });
   return out;
 }
+let favSort = "date";
+try { if(localStorage.getItem("merry-favsort") === "area") favSort = "area"; } catch(e) {}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-fsort]"); if(!b) return;
+  favSort = b.dataset.fsort; try { localStorage.setItem("merry-favsort", favSort); } catch(e) {}
+  renderFavs();
+});
 function renderFavs(){
   const all = favEntries();
   let h = "";
   if(!all.length){
-    h = '<p class="empty">Nothing saved yet. Tap the <b>♡</b> on any event, pop-up bar or way to give back, and it shows up here, grouped by area.</p>';
+    h = '<p class="empty">Nothing saved yet. Tap the <b>♡</b> on any event, pop-up bar or way to give back, and it shows up here.</p>';
     $("#fav-out").innerHTML = h; refreshHearts(); return;
   }
   const must = all.filter(x => x.lvl === 2).length, fixed = all.filter(x => x.w.fixed).length;
   h += '<p class="fav-area-note">'+all.length+' saved'+(must ? ', '+must+' must do' : '')+(fixed ? '. '+fixed+(fixed === 1 ? ' only happens' : ' only happen')+' on certain days, so start with those.' : '.')+'</p>';
   h += '<div class="fav-tools"><button class="chipbtn" type="button" id="favSend">Send my favorites to another device</button></div>'
      + '<div id="favSendBox" hidden><p id="favSendMsg" role="status"></p><input id="favSendLink" type="text" readonly aria-label="Link with your favorites"></div>';
-  const groups = {};
-  all.forEach(x => (groups[x.a || "Other"] ||= []).push(x));
-  const score = g => (g.some(x => x.lvl === 2) ? 0 : 1) * 1000 - g.length;
-  Object.keys(groups).sort((a,b) => score(groups[a]) - score(groups[b]) || a.localeCompare(b)).forEach(a => {
-    const g = groups[a].sort((x,y) => (x.w.past - y.w.past) || (y.lvl - x.lvl) || x.w.key.localeCompare(y.w.key));
-    const fx = g.filter(x => x.w.fixed);
-    h += '<h3>'+esc(a)+' <span class="n">'+g.length+'</span></h3>';
-    const fdays = [...new Set(fx.flatMap(x => x.w.dates || []))].sort();
-    if(fdays.length && g.length > 1) h += '<p class="fav-area-note">Date'+(fdays.length > 1 ? 's' : '')+' to plan '+esc(a)+' around: '+fdays.map(d => '<b>'+esc(fmtShort(d))+'</b>').join(" · ")+'</p>';
-    h += '<div class="list">'+g.map(x => x.html().replace('<article class="card', '<article data-when="'+esc(x.w.txt)+'" class="card')).join("")+'</div>';
-  });
+  h += '<div class="fav-tools" role="group" aria-label="Sort favorites">' +
+    '<button class="chipbtn" type="button" data-fsort="date" aria-pressed="'+(favSort === "date")+'">By date</button>' +
+    '<button class="chipbtn" type="button" data-fsort="area" aria-pressed="'+(favSort === "area")+'">By area</button></div>';
+  const cards = g => '<div class="list">'+g.map(x => x.html().replace('<article class="card', '<article data-when="'+esc(x.w.txt)+'" class="card')).join("")+'</div>';
+  const inGroup = (x,y) => (x.w.past - y.w.past) || (y.lvl - x.lvl) || x.w.key.localeCompare(y.w.key) || x.k.localeCompare(y.k);
+  if(favSort === "date"){
+    /* one-day-only things under their first upcoming date, then things that run for weeks (ending soonest first), then past ones */
+    const byDay = {}, runs = [], past = [];
+    all.forEach(x => { if(x.w.past) past.push(x); else if(x.w.fixed) (byDay[x.w.dates[0]] ||= []).push(x); else runs.push(x); });
+    Object.keys(byDay).sort().forEach(d => {
+      h += '<h3>'+esc(fmtLong(d))+' <span class="n">'+byDay[d].length+'</span></h3>' + cards(byDay[d].sort(inGroup));
+    });
+    if(runs.length) h += '<h3>Go any day <span class="n">'+runs.length+'</span></h3><p class="fav-area-note">These run for weeks. The ones ending soonest are first.</p>' +
+      cards(runs.sort((x,y) => x.w.key.localeCompare(y.w.key) || (y.lvl - x.lvl) || x.k.localeCompare(y.k)));
+    if(past.length) h += '<h3>Already happened <span class="n">'+past.length+'</span></h3>' + cards(past.sort(inGroup));
+  } else {
+    const groups = {};
+    all.forEach(x => (groups[x.a || "Other"] ||= []).push(x));
+    /* fixed order (region, then area name) so a section never moves when you add or remove a heart */
+    const ri = a => { const i = REGION_ORDER.indexOf(groups[a][0].r || AREA_REGION[a] || ""); return i < 0 ? 99 : i; };
+    Object.keys(groups).sort((a,b) => ri(a) - ri(b) || a.localeCompare(b)).forEach(a => {
+      const g = groups[a].sort(inGroup);
+      const fx = g.filter(x => x.w.fixed);
+      h += '<h3>'+esc(a)+' <span class="n">'+g.length+'</span></h3>';
+      const fdays = [...new Set(fx.flatMap(x => x.w.dates || []))].sort();
+      if(fdays.length && g.length > 1) h += '<p class="fav-area-note">Date'+(fdays.length > 1 ? 's' : '')+' to plan '+esc(a)+' around: '+fdays.map(d => '<b>'+esc(fmtShort(d))+'</b>').join(" · ")+'</p>';
+      h += cards(g);
+    });
+  }
   $("#fav-out").innerHTML = h;
   /* show the "Only Dec 10" line at the top of each saved card */
   document.querySelectorAll("#fav-out article[data-when]").forEach(a => {
