@@ -435,9 +435,24 @@ function dayPart(t, d){
   const wd = new Date(Date.UTC(+d.slice(0,4), mo-1, dy)).getUTCDay();
   const names = ["sun","mon","tue","wed","thu","fri","sat"][wd];
   const wkend = wd === 0 || wd === 6;
-  const byDay = parts.find(x => new RegExp("^\\W*" + names + "[a-z]*\\b(?!\\s*[-–]|\\s*to\\b)", "i").test(x))
+  const byDay = parts.find(x => dowCovers(x, wd))
              || parts.find(x => (wkend ? /^\W*weekends?\b/i : /^\W*weekdays?\b/i).test(x));
   return byDay || t;
+}
+/* does a part that starts with weekdays ("Sat 10am", "Sat–Sun 10am", "Fri & Sat", "Thursdays through Sundays") cover weekday wd (0 = Sun)? */
+const DOWS = ["sun","mon","tue","wed","thu","fri","sat"];
+function dowCovers(x, wd){
+  const head = x.toLowerCase().split(/\d/)[0];
+  if(!/^\W*(sun|mon|tue|wed|thu|fri|sat)/.test(head)) return false;
+  const re = /(sun|mon|tue|wed|thu|fri|sat)[a-z]*\.?(?:\s*(?:-|–|\u2014|to|through|thru)\s*(sun|mon|tue|wed|thu|fri|sat)[a-z]*)?/g;
+  let m;
+  while((m = re.exec(head))){
+    const a = DOWS.indexOf(m[1]);
+    if(!m[2]){ if(a === wd) return true; continue; }
+    const b = DOWS.indexOf(m[2]);
+    for(let i = a, n = 0; n < 7; i = (i + 1) % 7, n++){ if(i === wd) return true; if(i === b) break; }
+  }
+  return false;
 }
 /* drop dates and years so "Dec 9 at 7:30pm" reads as 7:30pm, not 9am */
 function stripDates(s){
