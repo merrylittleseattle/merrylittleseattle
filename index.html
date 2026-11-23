@@ -203,6 +203,10 @@ textarea:focus{outline:2px solid var(--glow);outline-offset:2px}
 .hours{font-variant-numeric:tabular-nums;color:var(--snow);font-size:14px}
 footer{border-top:1px solid var(--ridge);color:var(--frost);font-size:14px;padding:24px 0 90px}
 footer p{max-width:64ch;margin:0 0 8px}
+footer details.about{margin-top:14px;max-width:64ch}
+footer details.about summary{cursor:pointer;color:var(--glow);font-weight:600;display:inline-block;padding:6px 0}
+footer details.about[open] summary{margin-bottom:8px}
+footer details.about p{color:var(--snow);line-height:1.55}
 
 @media (max-width:420px){.dayitem{grid-template-columns:64px 1fr auto}.hero{padding-top:30px}}
 @media (prefers-reduced-motion:reduce){#myday{transition:none}}
@@ -321,6 +325,15 @@ footer p{max-width:64ch;margin:0 0 8px}
     <p class="contact"><a class="suggest" href="https://docs.google.com/forms/d/e/1FAIpQLSegMryN9rgqpXSHy02fnLd15AZGxu84S4fhTqB3apc_mszqzA/viewform" target="_blank" rel="noopener">Suggest an event, fix something or say hi</a></p>
     <p>Suggestions are read by a person and added once we can confirm them.</p>
     <p id="updated"></p>
+    <details class="about" id="about">
+      <summary>About this project</summary>
+      <p>Merry Little Seattle is a hobby. I love the holidays, and I love anything that brings people together. It's just one person who loves anything that builds community.</p>
+      <p><strong>I don't make a single cent from this, and I never will.</strong> No ads, no sponsors, no affiliate links, nothing to buy, and it isn't part of a company. I'm not trying to get money out of this. It's about something I love.</p>
+      <p>The holidays have been hard for me the past few years. I've lost several immediate family members on Christmas Eve, on Boxing Day, and in the weeks right around Christmas. I still hope people can find joy this time of year, and maybe some of mine comes from helping you find something that makes you smile.</p>
+      <p>I built it this way so it collects no personal information. There are no accounts and no tracking. Your favorites and planned days stay in your own browser. It's just here to help you get out and enjoy things. The only motive is joy.</p>
+      <p>I lost my job at the UW unexpectedly this year, and I'm determined to still have a brilliant holiday. I hope you do too.</p>
+      <p>So please <a href="https://docs.google.com/forms/d/e/1FAIpQLSegMryN9rgqpXSHy02fnLd15AZGxu84S4fhTqB3apc_mszqzA/viewform" target="_blank" rel="noopener">send me events I've missed, or just say hi</a>. And above all, merry little winter to all.</p>
+    </details>
   </div>
 </footer>
 
@@ -386,7 +399,7 @@ const GIVE = JSON.parse(document.getElementById('data-give').textContent);
 const DRIVES = JSON.parse(document.getElementById('data-drives').textContent);
 const MEALS = JSON.parse(document.getElementById('data-meals').textContent);
 const HMEALS = JSON.parse(document.getElementById('data-hmeals').textContent);
-const UPDATED = "Nov 22, 2026";
+const UPDATED = "Nov 23, 2026";
 const SEASON_START = "2026-11-01", SEASON_END = "2027-01-10";
 const REGION_ORDER = ["North Seattle","Central Seattle","South & West Seattle","North of Seattle","Eastside","South Sound","Mountains","Islands & Peninsula","Farther Afield"];
 const $ = s => document.querySelector(s);
