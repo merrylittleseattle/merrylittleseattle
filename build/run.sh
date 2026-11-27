@@ -1,7 +1,7 @@
 #!/bin/sh
 # Usage: sh build/run.sh <events_dump.json> <bars_dump.json> [tabs_dump.json]
 # Each dump is the JSON saved from Google Sheets get_values:
-#   events: 'Events'!A1:T600   bars: 'Christmas Pop Up Bars'!A1:N80
+#   events: 'Events'!A1:T1000   bars: 'Christmas Pop Up Bars'!A1:N80
 set -e
 cd "$(dirname "$0")"
 # optional third argument: Give Back / Holiday Drives / Meal Kitchens dump
